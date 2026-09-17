@@ -78,10 +78,9 @@ docker compose up -d --build
 ---
 
 ## 5. Triển khai trực tuyến (Môi trường Production)
-* **Địa chỉ URL trực tuyến (HTTPS):** `[DÁN_URL_RENDER_CỦA_NHÓM_VÀO_ĐÂY]` (Ví dụ: `https://cse702051-dt14-cinema.onrender.com`)
-* **Điểm cuối Health check:** `https://[URL_RENDER]/api/v1/health`
+* **Địa chỉ URL trực tuyến (HTTPS):** `https://bookingh.onrender.com/`)
+* **Điểm cuối Health check:** `https://bookingh.onrender.com/api/v1/health`
 
 ---
 
-## 6. Danh mục tài khoản kiểm thử (Sẽ cập nhật ở Mốc 2/3)
-*Tất cả tài khoản sử dụng dữ liệu giả lập phục vụ mục đích học tập.*
+
