@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đề tài 14 - Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim | CSE702051</title>
+  <title>Đề tài 07 - Hệ thống Quản lý Khách sạn và Đặt phòng | CSE702051</title>
   <meta name="description" content="Đồ án môn học Thiết kế web nâng cao (CSE702051) - Khoa Hệ thống thông tin, Trường CNTT, Đại học Phenikaa">
   <link rel="stylesheet" href="/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,11 +29,11 @@
   <section class="hero">
     <div class="container">
       <div class="hero-content">
-        <div class="topic-id">ĐỒ ÁN CUỐI KHÓA — ĐỀ TÀI 14</div>
-        <h2 class="hero-title">Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim</h2>
+        <div class="topic-id">ĐỒ ÁN CUỐI KHÓA — ĐỀ TÀI 07</div>
+        <h2 class="hero-title">Hệ thống Quản lý Khách sạn và Đặt phòng</h2>
         <p class="hero-desc">
-          Hệ thống trực tuyến phục vụ phân phối vé sự kiện và suất chiếu phim đa rạp, ứng dụng khung thuật toán 
-          <strong>T1 (Giữ chỗ có thời hạn &amp; Tự giải phóng)</strong> kết hợp <strong>T2 (Bảo toàn số lượng &amp; Chống trừ trùng)</strong>, 
+          Hệ thống trực tuyến phục vụ quản lý phòng và đặt phòng khách sạn, ứng dụng khung thuật toán 
+          <strong>T1 (Giữ chỗ có thời hạn)</strong> kết hợp <strong>T2 (Chống trừ trùng và bảo toàn số lượng)</strong>, 
           đảm bảo toàn vẹn giao dịch và an toàn thông tin theo chuẩn OWASP Top 10.
         </p>
 
@@ -144,12 +144,12 @@
             </div>
           </div>
 
-          <h4 class="section-subtitle">Chức năng cốt lõi Đề tài 14:</h4>
+          <h4 class="section-subtitle">Chức năng cốt lõi Đề tài 07:</h4>
           <ul class="features-list">
-            <li>Sơ đồ ghế theo từng suất chiếu (không lưu status trên ghế vật lý).</li>
-            <li>Giữ ghế có thời hạn 10 phút, tự giải phóng khi hết hạn hoặc khách hủy.</li>
-            <li>Vé điện tử gắn chữ ký số HMAC xác thực, quét soát vé chống quét lần 2.</li>
-            <li>Kiểm thử đồng thời 50 requests song song bảo đảm chỉ 1 vé thành công.</li>
+            <li>Kiểm tra phòng trống theo khoảng ngày và loại phòng.</li>
+            <li>Giữ chỗ có thời hạn trong lúc khách hoàn tất đặt phòng.</li>
+            <li>Lập hóa đơn với các khoản phụ thu và chính sách hủy phòng.</li>
+            <li>Kiểm thử truy vấn chống chồng lấn thời gian nhận/trả phòng.</li>
           </ul>
         </div>
       </div>

@@ -1,4 +1,4 @@
-# ĐỀ TÀI 14: NỀN TẢNG ĐẶT VÉ SỰ KIỆN VÀ QUẢN LÝ RẠP CHIẾU PHIM
+# ĐỀ TÀI 07: HỆ THỐNG QUẢN LÝ KHÁCH SẠN VÀ ĐẶT PHÒNG
 
 * **Học phần:** Thiết kế web nâng cao (CSE702051) — 02 tín chỉ
 * **Khoa:** Hệ thống thông tin | **Trường:** Công nghệ thông tin — Đại học Phenikaa
@@ -29,7 +29,7 @@
 ## 2. Kiến trúc hệ thống
 Hệ thống tuân thủ nghiêm ngặt **kiến trúc phân tầng (3-tier architecture)**:
 1. **Tầng Trình diễn & Điều khiển (Controller / Router)**: Nhận HTTP Request, kiểm tra định dạng đầu vào (validation), gọi Service và trả về JSON chuẩn RESTful. Không chứa truy vấn SQL.
-2. **Tầng Nghiệp vụ (Service)**: Xử lý quy tắc nghiệp vụ, kiểm tra quyền trên đối tượng (chống IDOR), điều phối giao dịch (Transaction), hiện thực thuật toán T1 (Giữ chỗ 10 phút & tự giải phóng).
+2. **Tầng Nghiệp vụ (Service)**: Xử lý quy tắc nghiệp vụ, kiểm tra quyền trên đối tượng (chống IDOR), điều phối giao dịch (Transaction), hiện thực thuật toán T1 (Giữ chỗ) kết hợp T2 (Chống trừ trùng và bảo toàn số lượng).
 3. **Tầng Truy cập dữ liệu (Repository / DAO)**: Thực thi truy vấn tham số hóa (Parameterized queries qua `pg` pool), tuyệt đối không ghép chuỗi SQL.
 
 ---
