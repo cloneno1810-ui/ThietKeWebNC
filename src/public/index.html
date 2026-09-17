@@ -13,16 +13,6 @@
 <body>
   <!-- Header -->
   <header class="header">
-    <div class="container header-container">
-      <div class="logo">
-        <span class="badge">PHENIKAA UNI</span>
-        <h1>CSE702051 &bull; Thiết kế web nâng cao</h1>
-      </div>
-      <div class="header-tags">
-        <span class="tag tag-blue">Nhánh B: Node.js &amp; PostgreSQL</span>
-        <span class="tag tag-purple">Buổi 01: Khởi động dự án</span>
-      </div>
-    </div>
   </header>
 
   <!-- Hero Section -->
@@ -68,104 +58,12 @@
 
   <!-- Main Content -->
   <main class="main-content">
-    <div class="container grid-2">
-      <!-- Group Info -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Thông tin Nhóm &amp; Lớp học phần</h3>
-          <span class="subtext">Biểu mẫu đăng ký Mốc 0</span>
-        </div>
-        <div class="card-body">
-          <ul class="info-list">
-            <li>
-              <strong>Lớp học phần:</strong>
-              <span class="placeholder-tag">[MÃ_LỚP_HỌC_PHẦN - VD: CSE702051_L01]</span>
-            </li>
-            <li>
-              <strong>Tên nhóm:</strong>
-              <span class="placeholder-tag">[SỐ_THỨ_TỰ_NHÓM - VD: Nhóm 03]</span>
-            </li>
-            <li>
-              <strong>Giảng viên hướng dẫn:</strong>
-              <span>TS. Nguyễn Văn Tánh</span>
-            </li>
-            <li>
-              <strong>Email GV phụ trách:</strong>
-              <span>tanh.nguyenvan@phenikaa-uni.edu.vn</span>
-            </li>
-          </ul>
-
-          <h4 class="section-subtitle">Phân công thành viên (Quy mô 2 người):</h4>
-          <div class="member-box">
-            <div class="member-header">
-              <strong>Thành viên 1 (Nhóm trưởng):</strong>
-              <span class="placeholder-name">[HỌ_VÀ_TÊN_SINH_VIÊN_1 - MSSV: 2201xxxx]</span>
-            </div>
-            <p class="role-desc">Đảm nhiệm: <strong>V1 (Kiến trúc &amp; Điều phối)</strong> + <strong>V3 (Phụ trách nghiệp vụ)</strong></p>
-          </div>
-
-          <div class="member-box">
-            <div class="member-header">
-              <strong>Thành viên 2:</strong>
-              <span class="placeholder-name">[HỌ_VÀ_TÊN_SINH_VIÊN_2 - MSSV: 2201xxxx]</span>
-            </div>
-            <p class="role-desc">Đảm nhiệm: <strong>V2 (CSDL)</strong> + <strong>V4 (Bảo mật &amp; Kiểm thử)</strong> + <strong>V5 (Triển khai &amp; Báo cáo)</strong></p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Architecture & Tech Stack -->
-      <div class="card">
-        <div class="card-header">
-          <h3>Ngăn xếp Công nghệ (Nhánh B)</h3>
-          <span class="subtext">Tuân thủ kiến trúc phân tầng</span>
-        </div>
-        <div class="card-body">
-          <div class="tech-table">
-            <div class="tech-row">
-              <span class="tech-layer">Tầng Trình diễn &amp; Điều khiển</span>
-              <span class="tech-val">Express Router + Controller (RESTful API, JSON format)</span>
-            </div>
-            <div class="tech-row">
-              <span class="tech-layer">Tầng Nghiệp vụ (Service)</span>
-              <span class="tech-val">Thuật toán T1 (Giữ chỗ 10p) + Quản lý Giao dịch &amp; Chống IDOR</span>
-            </div>
-            <div class="tech-row">
-              <span class="tech-layer">Tầng Truy cập dữ liệu (DAO)</span>
-              <span class="tech-val">Parameterized SQL qua `pg` Pool (Tuyệt đối không nối chuỗi SQL)</span>
-            </div>
-            <div class="tech-row">
-              <span class="tech-layer">Hệ quản trị CSDL</span>
-              <span class="tech-val">Neon Serverless PostgreSQL (Cloud-managed)</span>
-            </div>
-            <div class="tech-row">
-              <span class="tech-layer">Bảo mật ứng dụng</span>
-              <span class="tech-val">Bcrypt hashing, Helmet HTTP Security Headers, Rate Limiter</span>
-            </div>
-          </div>
-
-          <h4 class="section-subtitle">Chức năng cốt lõi Đề tài 07:</h4>
-          <ul class="features-list">
-            <li>Kiểm tra phòng trống theo khoảng ngày và loại phòng.</li>
-            <li>Giữ chỗ có thời hạn trong lúc khách hoàn tất đặt phòng.</li>
-            <li>Lập hóa đơn với các khoản phụ thu và chính sách hủy phòng.</li>
-            <li>Kiểm thử truy vấn chống chồng lấn thời gian nhận/trả phòng.</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+    
   </main>
 
   <!-- Footer with MANDATORY DISCLAIMER -->
   <footer class="footer">
-    <div class="container footer-container">
-      <div class="disclaimer-badge">
-        &bull; Dữ liệu mô phỏng phục vụ mục đích học tập &bull;
-      </div>
-      <p class="copyright">
-        Học phần Thiết kế web nâng cao (CSE702051) &bull; Khoa Hệ thống thông tin &bull; Trường Công nghệ thông tin &bull; Đại học Phenikaa (2026)
-      </p>
-    </div>
+
   </footer>
 
   <script>
