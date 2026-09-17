@@ -3,11 +3,13 @@
 * **Học phần:** Thiết kế web nâng cao (CSE702051) — 02 tín chỉ
 * **Khoa:** Hệ thống thông tin | **Trường:** Công nghệ thông tin — Đại học Phenikaa
 * **Giảng viên phụ trách:** TS. Nguyễn Văn Tánh — `tanh.nguyenvan@phenikaa-uni.edu.vn`
-* **Lớp học phần:** `[MÃ_LỚP_HỌC_PHẦN]`
-* **Nhóm thực hiện:** `[SỐ_THỨ_TỰ_NHÓM]`
+* **Lớp học phần:** `[CSE702051-1-1-26(N03)]`
+* **Nhóm thực hiện:** `[]`
 * **Thành viên:**
-  1. `[HỌ_TÊN_SV1]` - MSSV: `[MSSV_1]` (Vai trò: V1 - Trưởng nhóm & Kiến trúc, V3 - Nghiệp vụ)
-  2. `[HỌ_TÊN_SV2]` - MSSV: `[MSSV_2]` (Vai trò: V2 - CSDL, V4 - Bảo mật & Test, V5 - Triển khai & Báo cáo)
+  1. `[Đào Hữu Tú]` - MSSV: `[23017227]`
+  2. `[Trịnh Đắc Thái]` - MSSV: `[20010824]`
+  3. `[Phạm Văn Phúc]` - MSSV: `[20010813]`
+  4. `[Trần Quang Tú]` - MSSV: `[23017155]`
 
 ---
 
