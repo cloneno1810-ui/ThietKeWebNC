@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đề tài 14 - Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim | CSE702051</title>
+  <meta name="description" content="Đồ án môn học Thiết kế web nâng cao (CSE702051) - Khoa Hệ thống thông tin, Trường CNTT, Đại học Phenikaa">
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="container header-container">
+      <div class="logo">
+        <span class="badge">PHENIKAA UNI</span>
+        <h1>CSE702051 &bull; Thiết kế web nâng cao</h1>
+      </div>
+      <div class="header-tags">
+        <span class="tag tag-blue">Nhánh B: Node.js &amp; PostgreSQL</span>
+        <span class="tag tag-purple">Buổi 01: Khởi động dự án</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <div class="container">
+      <div class="hero-content">
+        <div class="topic-id">ĐỒ ÁN CUỐI KHÓA — ĐỀ TÀI 14</div>
+        <h2 class="hero-title">Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim</h2>
+        <p class="hero-desc">
+          Hệ thống trực tuyến phục vụ phân phối vé sự kiện và suất chiếu phim đa rạp, ứng dụng khung thuật toán 
+          <strong>T1 (Giữ chỗ có thời hạn &amp; Tự giải phóng)</strong> kết hợp <strong>T2 (Bảo toàn số lượng &amp; Chống trừ trùng)</strong>, 
+          đảm bảo toàn vẹn giao dịch và an toàn thông tin theo chuẩn OWASP Top 10.
+        </p>
+
+        <!-- Live Status Card -->
+        <div class="status-card">
+          <div class="status-header">
+            <span class="pulse-dot"></span>
+            <h3>Trạng thái hệ thống thời gian thực (Buổi 01)</h3>
+          </div>
+          <div class="status-grid">
+            <div class="status-item">
+              <span class="label">Máy chủ Ứng dụng:</span>
+              <span class="val green" id="app-status">Đang chạy (Node.js Express)</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Hạ tầng triển khai:</span>
+              <span class="val" id="infra-status">Render Cloud (HTTPS)</span>
+            </div>
+            <div class="status-item">
+              <span class="label">Cơ sở dữ liệu:</span>
+              <span class="val green" id="db-status">Đang kết nối Neon PostgreSQL...</span>
+            </div>
+            <div class="status-item">
+              <span class="label">API Kiểm tra:</span>
+              <a href="/api/v1/health" target="_blank" class="api-link">/api/v1/health &nearr;</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container grid-2">
+      <!-- Group Info -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Thông tin Nhóm &amp; Lớp học phần</h3>
+          <span class="subtext">Biểu mẫu đăng ký Mốc 0</span>
+        </div>
+        <div class="card-body">
+          <ul class="info-list">
+            <li>
+              <strong>Lớp học phần:</strong>
+              <span class="placeholder-tag">[MÃ_LỚP_HỌC_PHẦN - VD: CSE702051_L01]</span>
+            </li>
+            <li>
+              <strong>Tên nhóm:</strong>
+              <span class="placeholder-tag">[SỐ_THỨ_TỰ_NHÓM - VD: Nhóm 03]</span>
+            </li>
+            <li>
+              <strong>Giảng viên hướng dẫn:</strong>
+              <span>TS. Nguyễn Văn Tánh</span>
+            </li>
+            <li>
+              <strong>Email GV phụ trách:</strong>
+              <span>tanh.nguyenvan@phenikaa-uni.edu.vn</span>
+            </li>
+          </ul>
+
+          <h4 class="section-subtitle">Phân công thành viên (Quy mô 2 người):</h4>
+          <div class="member-box">
+            <div class="member-header">
+              <strong>Thành viên 1 (Nhóm trưởng):</strong>
+              <span class="placeholder-name">[HỌ_VÀ_TÊN_SINH_VIÊN_1 - MSSV: 2201xxxx]</span>
+            </div>
+            <p class="role-desc">Đảm nhiệm: <strong>V1 (Kiến trúc &amp; Điều phối)</strong> + <strong>V3 (Phụ trách nghiệp vụ)</strong></p>
+          </div>
+
+          <div class="member-box">
+            <div class="member-header">
+              <strong>Thành viên 2:</strong>
+              <span class="placeholder-name">[HỌ_VÀ_TÊN_SINH_VIÊN_2 - MSSV: 2201xxxx]</span>
+            </div>
+            <p class="role-desc">Đảm nhiệm: <strong>V2 (CSDL)</strong> + <strong>V4 (Bảo mật &amp; Kiểm thử)</strong> + <strong>V5 (Triển khai &amp; Báo cáo)</strong></p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Architecture & Tech Stack -->
+      <div class="card">
+        <div class="card-header">
+          <h3>Ngăn xếp Công nghệ (Nhánh B)</h3>
+          <span class="subtext">Tuân thủ kiến trúc phân tầng</span>
+        </div>
+        <div class="card-body">
+          <div class="tech-table">
+            <div class="tech-row">
+              <span class="tech-layer">Tầng Trình diễn &amp; Điều khiển</span>
+              <span class="tech-val">Express Router + Controller (RESTful API, JSON format)</span>
+            </div>
+            <div class="tech-row">
+              <span class="tech-layer">Tầng Nghiệp vụ (Service)</span>
+              <span class="tech-val">Thuật toán T1 (Giữ chỗ 10p) + Quản lý Giao dịch &amp; Chống IDOR</span>
+            </div>
+            <div class="tech-row">
+              <span class="tech-layer">Tầng Truy cập dữ liệu (DAO)</span>
+              <span class="tech-val">Parameterized SQL qua `pg` Pool (Tuyệt đối không nối chuỗi SQL)</span>
+            </div>
+            <div class="tech-row">
+              <span class="tech-layer">Hệ quản trị CSDL</span>
+              <span class="tech-val">Neon Serverless PostgreSQL (Cloud-managed)</span>
+            </div>
+            <div class="tech-row">
+              <span class="tech-layer">Bảo mật ứng dụng</span>
+              <span class="tech-val">Bcrypt hashing, Helmet HTTP Security Headers, Rate Limiter</span>
+            </div>
+          </div>
+
+          <h4 class="section-subtitle">Chức năng cốt lõi Đề tài 14:</h4>
+          <ul class="features-list">
+            <li>Sơ đồ ghế theo từng suất chiếu (không lưu status trên ghế vật lý).</li>
+            <li>Giữ ghế có thời hạn 10 phút, tự giải phóng khi hết hạn hoặc khách hủy.</li>
+            <li>Vé điện tử gắn chữ ký số HMAC xác thực, quét soát vé chống quét lần 2.</li>
+            <li>Kiểm thử đồng thời 50 requests song song bảo đảm chỉ 1 vé thành công.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer with MANDATORY DISCLAIMER -->
+  <footer class="footer">
+    <div class="container footer-container">
+      <div class="disclaimer-badge">
+        &bull; Dữ liệu mô phỏng phục vụ mục đích học tập &bull;
+      </div>
+      <p class="copyright">
+        Học phần Thiết kế web nâng cao (CSE702051) &bull; Khoa Hệ thống thông tin &bull; Trường Công nghệ thông tin &bull; Đại học Phenikaa (2026)
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Fetch live health check status from backend
+    fetch('/api/v1/health')
+      .then(res => res.json())
+      .then(data => {
+        const dbStatusEl = document.getElementById('db-status');
+        if (data.database && data.database.status === 'CONNECTED') {
+          dbStatusEl.innerHTML = 'Kết nối thành công (' + data.database.provider + ') &bull; ' + data.latencyMs + 'ms';
+          dbStatusEl.className = 'val green';
+        } else {
+          dbStatusEl.innerHTML = 'Lỗi kết nối CSDL';
+          dbStatusEl.className = 'val red';
+        }
+      })
+      .catch(err => {
+        document.getElementById('db-status').innerHTML = 'Chưa nạp dữ liệu: ' + err.message;
+      });
+  </script>
+</body>
+</html>

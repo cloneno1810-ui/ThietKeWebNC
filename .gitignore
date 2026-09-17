@@ -1,0 +1,26 @@
+# Bi mat -- quan trong nhat (BM11)
+.env
+.env.*
+!.env.example
+
+# Phu thuoc
+node_modules/
+npm-debug.log*
+
+# Ban dung va tep tam
+dist/
+build/
+*.log
+*.cache
+
+# Cau hinh ca nhan cua IDE
+.vscode/
+.idea/
+
+# He dieu hanh
+.DS_Store
+Thumbs.db
+
+# Du lieu tai len
+storage/uploads/*
+!storage/uploads/.gitkeep
