@@ -1,7 +1,7 @@
 {
-  "name": "cse702051-dt14-cinema",
+  "name": "cse702051-de-tai-07-khach-san",
   "version": "1.0.0",
-  "description": "Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim - Đề tài 14 Học phần CSE702051",
+  "description": "Hệ thống Quản lý Khách sạn và Đặt phòng - Đề tài 07 Học phần CSE702051",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
@@ -11,10 +11,10 @@
   "keywords": [
     "express",
     "postgresql",
-    "cinema-booking",
+    "hotel-booking",
     "cse702051"
   ],
-  "author": "[NHÓM_CỦA_BẠN]",
+  "author": "[NHÓM_07]",
   "license": "ISC",
   "dependencies": {
     "@neondatabase/serverless": "^1.1.0",

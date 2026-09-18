@@ -19,8 +19,8 @@ exports.getHealth = async (req, res) => {
 
   res.status(200).json({
     status: 'UP',
-    topic: 'DT14 - Nền tảng Đặt vé Sự kiện và Quản lý Rạp chiếu phim',
-    course: 'CSE702051 - Thiết kế web nâng cao | Đại học Phenikaa',
+    topic: 'ĐỀ TÀI 07: HỆ THỐNG QUẢN LÝ KHÁCH SẠN VÀ ĐẶT PHÒNG',
+    course: 'CSE702051-1-1-26(N03) - Thiết kế web nâng cao | Đại học Phenikaa',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
     database: {
