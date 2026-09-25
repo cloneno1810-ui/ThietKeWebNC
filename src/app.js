@@ -3,7 +3,12 @@ const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
 const crypto = require('crypto');
+const cookieParser = require('cookie-parser');
 const healthRoutes = require('./routes/health.routes');
+const authRoutes = require('./routes/auth.routes');
+const bookingRoutes = require('./routes/booking.routes');
+const roleApiRoutes = require('./routes/role_api.routes');
+const { sendError } = require('./utils/response');
 
 const app = express();
 
@@ -27,6 +32,7 @@ app.use(helmet({
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
 // Gan requestId cho moi request de de dang truy vet loi (BM9)
 app.use((req, res, next) => {
@@ -40,6 +46,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // Dang ky routes API v1
 app.use('/api/v1', healthRoutes);
+app.use('/api/v1', roleApiRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/bookings', bookingRoutes);
 
 // Route kiem tra suc khoe goc phuc vu Render Health Check
 app.get('/health', (req, res) => res.redirect('/api/v1/health'));
@@ -47,10 +56,12 @@ app.get('/health', (req, res) => res.redirect('/api/v1/health'));
 // Xu ly 404 cho API
 app.use('/api', (req, res) => {
   res.status(404).json({
+    success: false,
     error: {
-      code: 'NOT_FOUND',
+      code: 'RESOURCE_NOT_FOUND',
       message: 'Điểm cuối API không tồn tại',
-      requestId: req.id
+      details: [{ field: 'path', issue: req.originalUrl }],
+      timestamp: new Date().toISOString()
     }
   });
 });
@@ -58,15 +69,7 @@ app.use('/api', (req, res) => {
 // Xu ly loi tap trung (BM9 - Khong lo thong tin loi noi bo / SQL ra ngoai)
 app.use((err, req, res, next) => {
   console.error(`[LOI HE THONG] RequestId: ${req.id} -`, err);
-  res.status(err.status || 500).json({
-    error: {
-      code: err.code || 'INTERNAL_SERVER_ERROR',
-      message: process.env.NODE_ENV === 'production' 
-        ? 'Đã xảy ra lỗi máy chủ nội bộ. Vui lòng thử lại sau.' 
-        : err.message,
-      requestId: req.id
-    }
-  });
+  return sendError(res, err);
 });
 
 module.exports = app;
