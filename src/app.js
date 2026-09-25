@@ -29,7 +29,10 @@ app.use(helmet({
   }
 }));
 
-app.use(cors());
+app.use(cors({
+  origin: true,       // phản chiếu origin của request (cho phép same-origin)
+  credentials: true   // cho phép gửi cookie HTTP-Only
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
