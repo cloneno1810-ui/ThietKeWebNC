@@ -10,6 +10,12 @@ const { authenticate, authorize } = require('../middlewares/auth.middleware');
 router.get('/', authenticate, (req, res) => bookingController.getAll(req, res));
 
 /**
+ * PATCH /api/v1/bookings/:id/cancel
+ * ABAC / chống truy cập chéo: guest không được hủy đơn của guest khác
+ */
+router.patch('/:id/cancel', authenticate, (req, res) => bookingController.cancel(req, res));
+
+/**
  * GET /api/v1/bookings/:id
  * Kiểm tra quyền trên đối tượng (Object-level authorization check - IDOR protection)
  */

@@ -160,6 +160,23 @@
     .btn-cancel:hover { background: #e2e8f0; }
     .btn-confirm { background: #1e3a6a; color: #fff; }
     .btn-confirm:hover { background: #172c52; }
+    
+    .btn-secondary {
+      width: 100%;
+      background: #f1f5f9;
+      color: #1e3a6a;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 14px;
+      margin-top: 12px;
+      font-size: 1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .5px;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .btn-secondary:hover { background: #e2e8f0; border-color: #94a3b8; }
     .modal-close {
       position: absolute;
       top: 12px; right: 16px;
@@ -266,6 +283,7 @@
     </div>
 
     <button type="submit" id="btn">ĐĂNG NHẬP</button>
+    <button type="button" id="btnShowRegister" class="btn-secondary">ĐĂNG KÝ TÀI KHOẢN</button>
     <div id="msg" class="msg"></div>
   </form>
 </div>
@@ -282,6 +300,28 @@
       <button class="btn-confirm" id="modalConfirm">Gửi yêu cầu</button>
     </div>
     <div id="forgotMsg" style="margin-top:12px; font-size:0.88rem; display:none"></div>
+  </div>
+</div>
+
+<!-- Modal Đăng ký -->
+<div class="modal-overlay" id="registerModal">
+  <div class="modal-box" style="max-width: 420px;">
+    <button class="modal-close" id="modalCloseReg">&times;</button>
+    <h3>Đăng ký tài khoản</h3>
+    <form id="frmRegister">
+      <input type="text" id="regFullName" placeholder="Họ và tên" required>
+      <input type="email" id="regEmail" placeholder="Địa chỉ email" required>
+      <input type="text" id="regPhone" placeholder="Số điện thoại" required>
+      <input type="text" id="regIdCard" placeholder="Số CCCD/CMND" required>
+      <input type="password" id="regPassword" placeholder="Mật khẩu" required>
+      
+      <div id="regMsg" class="msg" style="margin-top:0; margin-bottom:14px; font-size:0.88rem; display:none"></div>
+      
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" id="modalCancelReg">Hủy bỏ</button>
+        <button type="submit" class="btn-confirm" id="modalConfirmReg">Đăng ký</button>
+      </div>
+    </form>
   </div>
 </div>
 
@@ -328,6 +368,72 @@
     msgEl.textContent = 'Đã gửi hướng dẫn đến ' + email + '. Vui lòng kiểm tra hộp thư!';
     document.getElementById('modalConfirm').disabled = true;
     setTimeout(closeModal, 2000);
+  });
+
+  /* =================== MODAL ĐĂNG KÝ =================== */
+  var modalReg = document.getElementById('registerModal');
+  
+  document.getElementById('btnShowRegister').addEventListener('click', function() {
+    document.getElementById('regMsg').style.display = 'none';
+    document.getElementById('frmRegister').reset();
+    modalReg.classList.add('open');
+  });
+
+  function closeRegModal() { modalReg.classList.remove('open'); }
+  document.getElementById('modalCloseReg').addEventListener('click', closeRegModal);
+  document.getElementById('modalCancelReg').addEventListener('click', closeRegModal);
+  modalReg.addEventListener('click', function(e) { if (e.target === modalReg) closeRegModal(); });
+
+  document.getElementById('frmRegister').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var btn = document.getElementById('modalConfirmReg');
+    var msgEl = document.getElementById('regMsg');
+    
+    var payload = {
+      fullName: document.getElementById('regFullName').value.trim(),
+      email: document.getElementById('regEmail').value.trim(),
+      phone: document.getElementById('regPhone').value.trim(),
+      identityCard: document.getElementById('regIdCard').value.trim(),
+      password: document.getElementById('regPassword').value
+    };
+
+    btn.disabled = true;
+    btn.textContent = 'Đang xử lý...';
+    msgEl.style.display = 'none';
+    msgEl.className = 'msg';
+
+    fetch('/api/v1/auth/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    })
+    .then(function(res) { return res.json().then(function(d) { return { status: res.status, data: d }; }); })
+    .then(function(r) {
+      if (r.status === 201 && r.data.success) {
+        msgEl.className = 'msg ok';
+        msgEl.textContent = 'Đăng ký thành công! Vui lòng đăng nhập.';
+        msgEl.style.display = 'block';
+        
+        // Tự điền email qua form đăng nhập
+        document.getElementById('em').value = payload.email;
+        document.getElementById('pw').value = '';
+        
+        setTimeout(closeRegModal, 2000);
+      } else {
+        msgEl.className = 'msg err';
+        msgEl.textContent = (r.data.error && r.data.error.message) ? r.data.error.message : 'Đăng ký thất bại. Kiểm tra lại thông tin.';
+        msgEl.style.display = 'block';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Đăng ký';
+    })
+    .catch(function(err) {
+      msgEl.className = 'msg err';
+      msgEl.textContent = 'Lỗi kết nối: ' + err.message;
+      msgEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Đăng ký';
+    });
   });
 
   /* =================== ĐĂNG NHẬP =================== */

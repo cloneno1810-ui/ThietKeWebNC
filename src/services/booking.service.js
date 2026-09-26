@@ -45,6 +45,39 @@ class BookingService {
     // Khách hàng thông thường: chỉ trả về các đơn của chính mình
     return await bookingRepository.findByUserId(currentUser.id);
   }
+
+  /**
+   * Hủy đơn đặt phòng — kiểm soát quyền trên đối tượng (ABAC / chống IDOR).
+   * Guest chỉ được hủy đơn của chính mình. Truy cập chéo → 403 FORBIDDEN.
+   */
+  async cancelBooking(bookingId, currentUser) {
+    const booking = await bookingRepository.findById(bookingId);
+    if (!booking) {
+      throw new AppError('RESOURCE_NOT_FOUND', `Không tìm thấy đơn đặt phòng với ID ${bookingId}.`, 404);
+    }
+
+    const isStaff = ['admin', 'manager', 'receptionist'].includes(currentUser.role);
+    const isOwner = booking.user_id && String(booking.user_id) === String(currentUser.id);
+
+    if (!isStaff && !isOwner) {
+      throw new AppError(
+        'FORBIDDEN',
+        'Bạn không có quyền hủy đơn đặt phòng của khách hàng khác (Vi phạm kiểm soát quyền đối tượng).',
+        403
+      );
+    }
+
+    if (booking.status === 'cancelled') {
+      throw new AppError('INVALID_INPUT', 'Đơn đặt phòng này đã được hủy trước đó.', 400);
+    }
+
+    if (['checked_out', 'no_show'].includes(booking.status)) {
+      throw new AppError('INVALID_INPUT', `Không thể hủy đơn ở trạng thái ${booking.status}.`, 400);
+    }
+
+    const updated = await bookingRepository.updateStatus(booking.id, 'cancelled');
+    return updated;
+  }
 }
 
 module.exports = new BookingService();

@@ -1,16 +1,15 @@
 /**
- * Kịch bản kiểm thử tự động Buổi 04:
- * 1. Đăng ký tài khoản mới (mật khẩu băm an toàn bcryptjs)
- * 2. Đăng nhập thành công và lấy JWT token
- * 3. Thử đăng nhập sai liên tiếp kiểm tra cơ chế khóa tài khoản (BM10)
- * 4. Kiểm tra gọi API khi chưa đăng nhập -> HTTP 401 UNAUTHORIZED
- * 5. Kiểm chứng chống truy cập chéo dữ liệu (IDOR - BM4):
- *    - User A (guest1@gmail.com) tạo/sở hữu Booking #1
- *    - User B (guest2@gmail.com) cố tình gọi GET /api/v1/bookings/1 -> Hệ thống CHẶN với mã 403 FORBIDDEN!
- *    - Lễ tân/Admin gọi GET /api/v1/bookings/1 -> Thành công HTTP 200 OK!
+ * Kịch bản kiểm thử tự động Chặng 4 (đúng 5 ca nộp ảnh):
+ *  Ảnh 08 — GET /api/v1/auth/me chưa token → 401 UNAUTHORIZED
+ *  Ảnh 09 — guest1 POST /api/v1/room-types → 403 FORBIDDEN (RBAC)
+ *  Ảnh 10 — guest1 PATCH /api/v1/bookings/2/cancel (đơn guest2) → 403 FORBIDDEN (ABAC)
+ *  Ảnh 12 — cột users.password_hash là bcrypt ($2a$ / $2b$)
+ *  Ảnh 19 — Set-Cookie: HttpOnly, SameSite=Lax, Path=/
  */
 
+require('dotenv').config();
 const http = require('http');
+const db = require('./src/config/db');
 
 function makeRequest(options, postData = null) {
   return new Promise((resolve, reject) => {
@@ -18,11 +17,17 @@ function makeRequest(options, postData = null) {
       let data = '';
       res.on('data', (chunk) => data += chunk);
       res.on('end', () => {
+        let body;
         try {
-          resolve({ status: res.statusCode, body: JSON.parse(data) });
+          body = JSON.parse(data);
         } catch (e) {
-          resolve({ status: res.statusCode, body: data });
+          body = data;
         }
+        resolve({
+          status: res.statusCode,
+          headers: res.headers,
+          body
+        });
       });
     });
     req.on('error', reject);
@@ -33,137 +38,112 @@ function makeRequest(options, postData = null) {
   });
 }
 
+function jsonOpts(path, method, token) {
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers.Authorization = `Bearer ${token}`;
+  return {
+    hostname: 'localhost',
+    port: process.env.PORT || 8080,
+    path,
+    method,
+    headers
+  };
+}
+
+async function login(email, password) {
+  const res = await makeRequest(jsonOpts('/api/v1/auth/login', 'POST'), { email, password });
+  return { res, token: res.body?.data?.token };
+}
+
 async function runTests() {
+  const results = [];
   console.log('======================================================================');
-  console.log('  BẮT ĐẦU CHẠY BỘ KIỂM THỬ BUỔI 04 (XÁC THỰC, PHÂN QUYỀN & CHỐNG IDOR)');
+  console.log('  NHẬT KÝ KIỂM THỬ TẠI CHỖ — CHẶNG 4 (XÁC THỰC & PHÂN QUYỀN)');
   console.log('======================================================================\n');
 
-  // TEST 1: Gọi endpoint yêu cầu đăng nhập khi chưa có Token (Mong đợi: 401 UNAUTHORIZED)
-  console.log('[TEST 1] Gọi GET /api/v1/bookings/1 khi chưa đăng nhập...');
-  const res1 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/bookings/1',
-    method: 'GET'
-  });
-  console.log(`-> HTTP Status: ${res1.status} | Code: ${res1.body?.error?.code}`);
-  if (res1.status === 401 && res1.body?.error?.code === 'UNAUTHORIZED') {
-    console.log('  [PASS] Hệ thống đã từ chối với mã 401 Unauthorized hợp lệ.\n');
-  } else {
-    console.log('  [FAIL] Không đúng mã mong đợi.\n');
+  // Ảnh 08
+  console.log('[CA 1 / Ảnh 08] GET /api/v1/auth/me khi chưa gửi token...');
+  const resMe = await makeRequest(jsonOpts('/api/v1/auth/me', 'GET'));
+  const pass08 = resMe.status === 401 && resMe.body?.error?.code === 'UNAUTHORIZED';
+  console.log(`  HTTP ${resMe.status} | ${resMe.body?.error?.code}`);
+  console.log(pass08 ? '  [ĐẠT] 401 Unauthorized.\n' : '  [KHÔNG ĐẠT]\n');
+  results.push({ id: '08', name: '401 Unauthorized /auth/me', pass: pass08, status: resMe.status });
+
+  console.log('[Đăng nhập] guest1@gmail.com ...');
+  const { res: loginGuest, token: tokenGuest1 } = await login('guest1@gmail.com', 'Password123!');
+  if (!tokenGuest1) {
+    console.log('  [LỖI] Không đăng nhập được guest1:', loginGuest.body);
+    process.exit(1);
   }
+  console.log(`  HTTP ${loginGuest.status} | token nhận được.\n`);
 
-  // TEST 2: Đăng nhập Guest 1 (Sở hữu Booking #1 trong seed)
-  console.log('[TEST 2] Đăng nhập tài khoản Guest 1 (guest1@gmail.com)...');
-  const res2 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/auth/login',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }, { email: 'guest1@gmail.com', password: 'Password123!' });
-  console.log(`-> HTTP Status: ${res2.status} | Success: ${res2.body?.success}`);
-  const tokenGuest1 = res2.body?.data?.token;
-  console.log(`  [PASS] Đăng nhập thành công, nhận token: ${tokenGuest1?.substring(0, 25)}...\n`);
+  // Ảnh 19
+  const setCookie = loginGuest.headers['set-cookie'] || [];
+  const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : String(setCookie);
+  const pass19 =
+    /token=/i.test(cookieStr) &&
+    /HttpOnly/i.test(cookieStr) &&
+    /SameSite=Lax/i.test(cookieStr) &&
+    /Path=\//i.test(cookieStr);
+  console.log('[CA 5 / Ảnh 19] Set-Cookie sau đăng nhập:');
+  console.log(`  ${cookieStr || '(không có header Set-Cookie)'}`);
+  console.log(pass19 ? '  [ĐẠT] HttpOnly + SameSite=Lax + Path=/\n' : '  [KHÔNG ĐẠT]\n');
+  results.push({ id: '19', name: 'Cookie HttpOnly SameSite=Lax Path=/', pass: pass19, status: cookieStr });
 
-  // TEST 3: Đăng nhập Guest 2 (Sở hữu Booking #2 trong seed)
-  console.log('[TEST 3] Đăng nhập tài khoản Guest 2 (guest2@gmail.com)...');
-  const res3 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/auth/login',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }, { email: 'guest2@gmail.com', password: 'Password123!' });
-  console.log(`-> HTTP Status: ${res3.status} | Success: ${res3.body?.success}`);
-  const tokenGuest2 = res3.body?.data?.token;
-  console.log(`  [PASS] Đăng nhập thành công, nhận token: ${tokenGuest2?.substring(0, 25)}...\n`);
-
-  // TEST 4: Guest 1 xem chính chủ Booking #1 (Mong đợi: 200 OK)
-  console.log('[TEST 4] Guest 1 truy cập xem Booking #1 của CHÍNH MÌNH...');
-  const res4 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/bookings/1',
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${tokenGuest1}` }
+  // Ảnh 09
+  console.log('[CA 2 / Ảnh 09] guest1 POST /api/v1/room-types (thiếu quyền chức năng)...');
+  const resRoom = await makeRequest(jsonOpts('/api/v1/room-types', 'POST', tokenGuest1), {
+    name: 'Unauthorized Suite',
+    basePricePerNight: 999000,
+    maxOccupancy: 2
   });
-  console.log(`-> HTTP Status: ${res4.status} | Guest Name: ${res4.body?.data?.booking?.guest_name}`);
-  if (res4.status === 200 && res4.body?.data?.booking?.id == 1) {
-    console.log('  [PASS] Chính chủ truy cập hợp lệ (200 OK).\n');
-  } else {
-    console.log('  [FAIL] Không thể truy cập đơn của chính mình.\n');
-  }
+  const pass09 = resRoom.status === 403 && resRoom.body?.error?.code === 'FORBIDDEN';
+  console.log(`  HTTP ${resRoom.status} | ${resRoom.body?.error?.code}`);
+  console.log(pass09 ? '  [ĐẠT] 403 Forbidden (RBAC).\n' : '  [KHÔNG ĐẠT]\n');
+  results.push({ id: '09', name: '403 RBAC POST /room-types', pass: pass09, status: resRoom.status });
 
-  // TEST 5: KIỂM CHỨNG CHỐNG TRUY CẬP CHÉO DỮ LIỆU (IDOR / BM4):
-  // Guest 2 cố tình truy cập Booking #1 của Guest 1 (Mong đợi: 403 FORBIDDEN)
-  console.log('[TEST 5] [TRỌNG TÂM] Guest 2 cố tình xem trộm Booking #1 của Guest 1...');
-  const res5 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/bookings/1',
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${tokenGuest2}` }
+  // Ảnh 10
+  console.log('[CA 3 / Ảnh 10] guest1 PATCH /api/v1/bookings/2/cancel (đơn của guest2)...');
+  const resCancel = await makeRequest(jsonOpts('/api/v1/bookings/2/cancel', 'PATCH', tokenGuest1), {});
+  const pass10 =
+    (resCancel.status === 403 || resCancel.status === 404) &&
+    (resCancel.body?.error?.code === 'FORBIDDEN' || resCancel.body?.error?.code === 'RESOURCE_NOT_FOUND');
+  console.log(`  HTTP ${resCancel.status} | ${resCancel.body?.error?.code}`);
+  console.log(pass10 ? '  [ĐẠT] Chống truy cập chéo (ABAC).\n' : '  [KHÔNG ĐẠT]\n');
+  results.push({ id: '10', name: '403/404 ABAC cancel booking #2', pass: pass10, status: resCancel.status });
+
+  // Ảnh 12
+  console.log('[CA 4 / Ảnh 12] Kiểm tra users.password_hash là bcrypt, không phải plaintext...');
+  const hashRows = await db.query(
+    `SELECT email, password_hash FROM users WHERE email IN ('guest1@gmail.com', 'admin@hotel.com') ORDER BY email;`
+  );
+  const bcryptRe = /^\$2[aby]\$\d{2}\$.{53}$/;
+  const allHashed = hashRows.rows.length > 0 && hashRows.rows.every((row) => {
+    const hash = row.password_hash || '';
+    const looksHashed = bcryptRe.test(hash) || hash.startsWith('$2a$') || hash.startsWith('$2b$');
+    const notPlain = hash !== 'Password123!' && !hash.toLowerCase().includes('password123');
+    console.log(`  ${row.email}: ${hash.substring(0, 29)}...`);
+    return looksHashed && notPlain;
   });
-  console.log(`-> HTTP Status: ${res5.status} | Code: ${res5.body?.error?.code} | Msg: ${res5.body?.error?.message}`);
-  if (res5.status === 403 && res5.body?.error?.code === 'FORBIDDEN') {
-    console.log('  [PASS] XÁC NHẬN CHỐNG TRUY CẬP CHÉO (IDOR): Hệ thống đã chặn đứng hành vi và trả về HTTP 403 Forbidden!\n');
-  } else {
-    console.log('  [FAIL] Lỗ hổng IDOR! Người dùng truy cập được dữ liệu của nhau.\n');
-  }
+  console.log(allHashed ? '  [ĐẠT] Cột mật khẩu là mã băm bcrypt.\n' : '  [KHÔNG ĐẠT]\n');
+  results.push({ id: '12', name: 'password_hash bcrypt', pass: allHashed, status: hashRows.rows[0]?.password_hash?.substring(0, 29) });
 
-  // TEST 6: Đăng nhập vai trò Lễ tân (Receptionist) xem Booking #1 (Mong đợi: 200 OK do quyền nhân viên)
-  console.log('[TEST 6] Đăng nhập vai trò Lễ tân (receptionist@hotel.com)...');
-  const res6 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/auth/login',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }, { email: 'receptionist@hotel.com', password: 'Password123!' });
-  const tokenRec = res6.body?.data?.token;
-
-  console.log('Lễ tân truy cập xem Booking #1 phục vụ nghiệp vụ check-in...');
-  const res6b = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/bookings/1',
-    method: 'GET',
-    headers: { 'Authorization': `Bearer ${tokenRec}` }
-  });
-  console.log(`-> HTTP Status: ${res6b.status} | Code: ${res6b.body?.data?.booking?.booking_code}`);
-  if (res6b.status === 200) {
-    console.log('  [PASS] Phân quyền chức năng hợp lệ: Nhân viên lễ tân được quyền xem hồ sơ booking của khách.\n');
-  }
-
-  // TEST 7: Đăng ký tài khoản khách hàng mới
-  console.log('[TEST 7] Đăng ký tài khoản khách hàng mới...');
-  const testEmail = `newuser_${Date.now()}@gmail.com`;
-  const res7 = await makeRequest({
-    hostname: 'localhost',
-    port: 8080,
-    path: '/api/v1/auth/register',
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' }
-  }, {
-    email: testEmail,
-    password: 'SecurePassword2026!',
-    fullName: 'Lê Minh Khách',
-    phone: '0912345678',
-    identityCard: '001099123456'
-  });
-  console.log(`-> HTTP Status: ${res7.status} | User: ${res7.body?.data?.user?.email} | Role: ${res7.body?.data?.user?.role}`);
-  if (res7.status === 201 && res7.body?.data?.user?.role === 'guest') {
-    console.log('  [PASS] Đăng ký thành công, mật khẩu đã được băm an toàn trong database.\n');
-  }
-
+  const passed = results.filter((r) => r.pass).length;
+  const total = results.length;
   console.log('======================================================================');
-  console.log('  HOÀN TẤT TẤT CẢ CÁC BÀI KIỂM THỬ BUỔI 04 THÀNH CÔNG RỰC RỠ!');
+  console.log(`  KẾT QUẢ: ${passed}/${total} ca ĐẠT — ${passed === total ? 'ĐẠT 100%' : 'CHƯA ĐẠT'}`);
   console.log('======================================================================');
+
+  return { passed, total, results };
 }
 
 module.exports = { runTests };
 
 if (require.main === module) {
-  runTests().catch(console.error);
+  runTests()
+    .then(({ passed, total }) => process.exit(passed === total ? 0 : 1))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 }

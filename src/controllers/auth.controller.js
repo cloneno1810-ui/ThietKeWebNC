@@ -1,5 +1,6 @@
 const authService = require('../services/auth.service');
 const { sendSuccess, sendError } = require('../utils/response');
+const { tokenCookieOptions, clearTokenCookieOptions } = require('../utils/cookie');
 
 class AuthController {
   /**
@@ -16,13 +17,8 @@ class AuthController {
         identityCard
       });
 
-      // Gửi cookie HTTP-Only (BM7)
-      res.cookie('token', result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000
-      });
+      // Gửi cookie HTTP-Only (BM7) — Path=/, SameSite=Lax
+      res.cookie('token', result.token, tokenCookieOptions());
 
       return sendSuccess(res, result, 201);
     } catch (err) {
@@ -38,12 +34,7 @@ class AuthController {
       const { email, password } = req.body;
       const result = await authService.login({ email, password });
 
-      res.cookie('token', result.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000
-      });
+      res.cookie('token', result.token, tokenCookieOptions());
 
       return sendSuccess(res, result, 200);
     } catch (err) {
@@ -56,7 +47,7 @@ class AuthController {
    */
   async logout(req, res) {
     try {
-      res.clearCookie('token');
+      res.clearCookie('token', clearTokenCookieOptions());
       return sendSuccess(res, { message: 'Đăng xuất thành công.' }, 200);
     } catch (err) {
       return sendError(res, err);

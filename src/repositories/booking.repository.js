@@ -48,6 +48,20 @@ class BookingRepository {
     const result = await db.query(sql);
     return result.rows;
   }
+
+  /**
+   * Cập nhật trạng thái đơn (hủy phòng — tầng Repository)
+   */
+  async updateStatus(id, status) {
+    const result = await db.query(
+      `UPDATE bookings
+       SET status = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *;`,
+      [id, status]
+    );
+    return result.rows[0] || null;
+  }
 }
 
 module.exports = new BookingRepository();
