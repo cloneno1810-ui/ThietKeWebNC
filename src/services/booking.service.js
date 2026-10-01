@@ -78,6 +78,84 @@ class BookingService {
     const updated = await bookingRepository.updateStatus(booking.id, 'cancelled');
     return updated;
   }
+
+  async createBooking(data, currentUser) {
+    // Generate unique booking code
+    data.booking_code = 'BK' + Date.now().toString().slice(-8);
+    // Bind to user if logged in as guest
+    if (currentUser.role === 'guest') {
+      data.user_id = currentUser.id;
+      if(!data.guest_name) data.guest_name = currentUser.fullName;
+      if(!data.guest_email) data.guest_email = currentUser.email;
+      
+      const authService = require('../services/auth.service');
+      const user = await authService.getMe(currentUser.id);
+      if(!data.guest_phone) data.guest_phone = user.phone;
+    }
+    
+    // Check if room type exists and is available
+    const roomTypeRepository = require('../repositories/roomType.repository');
+    const roomType = await roomTypeRepository.findById(data.room_type_id);
+    if (!roomType) {
+      throw new AppError('RESOURCE_NOT_FOUND', 'Hạng phòng không tồn tại.', 404);
+    }
+    
+    // Simple mock logic: if total price isn't provided, calculate basic price
+    if (!data.total_price) {
+      const days = (new Date(data.check_out_date) - new Date(data.check_in_date)) / (1000 * 60 * 60 * 24);
+      data.total_price = roomType.base_price_per_night * (days > 0 ? days : 1);
+    }
+    
+    return await bookingRepository.create(data);
+  }
+
+  async checkInBooking(id, currentUser) {
+    const isStaff = ['admin', 'manager', 'receptionist'].includes(currentUser.role);
+    if (!isStaff) {
+      throw new AppError('FORBIDDEN', 'Chỉ nhân viên mới được phép check-in.', 403);
+    }
+    
+    const booking = await bookingRepository.findById(id);
+    if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
+    
+    if (booking.status !== 'confirmed' && booking.status !== 'pending_payment') {
+      throw new AppError('INVALID_STATE', `Không thể check-in phòng đang ở trạng thái ${booking.status}.`, 400);
+    }
+    
+    // Update booking status
+    const updated = await bookingRepository.updateStatus(booking.id, 'checked_in');
+    
+    // If a room is assigned, update room status
+    if (booking.room_id) {
+      const roomRepository = require('../repositories/room.repository');
+      await roomRepository.updateStatus(booking.room_id, 'occupied');
+    }
+    
+    return updated;
+  }
+
+  async checkOutBooking(id, currentUser) {
+    const isStaff = ['admin', 'manager', 'receptionist'].includes(currentUser.role);
+    if (!isStaff) {
+      throw new AppError('FORBIDDEN', 'Chỉ nhân viên mới được phép check-out.', 403);
+    }
+    
+    const booking = await bookingRepository.findById(id);
+    if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
+    
+    if (booking.status !== 'checked_in') {
+      throw new AppError('INVALID_STATE', `Không thể check-out phòng chưa check-in. Trạng thái: ${booking.status}.`, 400);
+    }
+    
+    const updated = await bookingRepository.updateStatus(booking.id, 'checked_out');
+    
+    if (booking.room_id) {
+      const roomRepository = require('../repositories/room.repository');
+      await roomRepository.updateStatus(booking.room_id, 'cleaning');
+    }
+    
+    return updated;
+  }
 }
 
 module.exports = new BookingService();

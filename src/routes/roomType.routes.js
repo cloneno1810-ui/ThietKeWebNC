@@ -17,4 +17,8 @@ router.post('/', authenticate, authorize('admin', 'manager'), (req, res) =>
   roomTypeController.create(req, res)
 );
 
+router.get('/:id', authenticate, (req, res) => roomTypeController.getDetail(req, res));
+router.put('/:id', authenticate, authorize('admin', 'manager'), (req, res) => roomTypeController.update(req, res));
+router.delete('/:id', authenticate, authorize('admin'), (req, res) => roomTypeController.delete(req, res));
+
 module.exports = router;

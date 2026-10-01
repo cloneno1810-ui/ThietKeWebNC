@@ -21,4 +21,19 @@ router.patch('/:id/cancel', authenticate, (req, res) => bookingController.cancel
  */
 router.get('/:id', authenticate, (req, res) => bookingController.getDetail(req, res));
 
+/**
+ * POST /api/v1/bookings
+ */
+router.post('/', authenticate, (req, res) => bookingController.create(req, res));
+
+/**
+ * POST /api/v1/bookings/:id/check-in
+ */
+router.post('/:id/check-in', authenticate, authorize('admin', 'manager', 'receptionist'), (req, res) => bookingController.checkIn(req, res));
+
+/**
+ * POST /api/v1/bookings/:id/check-out
+ */
+router.post('/:id/check-out', authenticate, authorize('admin', 'manager', 'receptionist'), (req, res) => bookingController.checkOut(req, res));
+
 module.exports = router;

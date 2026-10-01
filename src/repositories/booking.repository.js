@@ -62,6 +62,38 @@ class BookingRepository {
     );
     return result.rows[0] || null;
   }
+
+  async create(data) {
+    const {
+      booking_code, user_id, room_type_id, room_id, guest_name, guest_phone,
+      guest_email, check_in_date, check_out_date, num_guests, total_price, status
+    } = data;
+    
+    const sql = `
+      INSERT INTO bookings (
+        booking_code, user_id, room_type_id, room_id, guest_name, guest_phone,
+        guest_email, check_in_date, check_out_date, num_guests, total_price, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      RETURNING *;
+    `;
+    const params = [
+      booking_code,
+      user_id || null,
+      room_type_id,
+      room_id || null,
+      guest_name || null,
+      guest_phone || null,
+      guest_email || null,
+      check_in_date,
+      check_out_date,
+      num_guests,
+      total_price,
+      status || 'pending_payment'
+    ];
+    
+    const result = await db.query(sql, params);
+    return result.rows[0];
+  }
 }
 
 module.exports = new BookingRepository();

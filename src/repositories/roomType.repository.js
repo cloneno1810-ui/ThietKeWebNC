@@ -27,6 +27,33 @@ class RoomTypeRepository {
     );
     return result.rows[0];
   }
+  async findById(id) {
+    const result = await db.query(
+      `SELECT * FROM room_types WHERE id = $1 LIMIT 1;`,
+      [id]
+    );
+    return result.rows[0] || null;
+  }
+
+  async update(id, { name, description, basePricePerNight, maxOccupancy, amenities }) {
+    const result = await db.query(
+      `UPDATE room_types 
+       SET name = $1, description = $2, base_price_per_night = $3, 
+           max_occupancy = $4, amenities = $5, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $6
+       RETURNING *;`,
+      [name, description || null, basePricePerNight, maxOccupancy, amenities || null, id]
+    );
+    return result.rows[0] || null;
+  }
+
+  async delete(id) {
+    const result = await db.query(
+      `DELETE FROM room_types WHERE id = $1 RETURNING id;`,
+      [id]
+    );
+    return result.rows[0] || null;
+  }
 }
 
 module.exports = new RoomTypeRepository();
