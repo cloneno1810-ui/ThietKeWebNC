@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản lý phòng</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Danh sách phòng</div>
+      <p class="muted">Cập nhật trạng thái sẵn sàng hoặc bảo trì</p>
+    </div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Số phòng</th><th>Hạng</th><th>Trạng thái</th><th>Hành động</th></tr>
+    </thead>
+    <tbody id="rm-body"></tbody>
+  </table>
+
+  <script>
+    let rooms = [];
+    function badge(st) {
+      const map = {
+        available: ['green', 'Sẵn sàng'],
+        booked: ['blue', 'Đã giữ'],
+        occupied: ['yellow', 'Đang ở'],
+        cleaning: ['gray', 'Dọn phòng'],
+        maintenance: ['red', 'Bảo trì']
+      };
+      const v = map[st] || ['gray', st];
+      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
+    }
+    function render(list) {
+      document.getElementById('rm-body').innerHTML = list.map((r) =>
+        '<tr><td>' + r.room_number + '</td><td>' + (r.room_type_name || '-') + '</td><td>' + badge(r.status) + '</td><td>' +
+        '<button type="button" class="btn btn-sm btn-warn" onclick="updateStatus(' + r.id + ', \'maintenance\')">Bảo trì</button> ' +
+        '<button type="button" class="btn btn-sm btn-success" onclick="updateStatus(' + r.id + ', \'available\')">Sẵn sàng</button>' +
+        '</td></tr>'
+      ).join('');
+    }
+    async function loadRooms() {
+      const res = await API.request('/api/v1/rooms?limit=100');
+      if (res.status === 200) {
+        rooms = res.data.data.rooms || [];
+        render(rooms);
+      } else {
+        showToast('Không tải được phòng', res.data.error && res.data.error.message);
+      }
+    }
+    async function updateStatus(id, st) {
+      const res = await API.request('/api/v1/rooms/' + id + '/status', 'PATCH', { status: st });
+      if (res.status === 200) {
+        showToast('Đã cập nhật trạng thái', '', true);
+        loadRooms();
+      } else {
+        showToast('Không cập nhật được', res.data.error && res.data.error.message);
+      }
+    }
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(rooms.filter((r) => (r.room_number + (r.room_type_name || '') + r.status).toLowerCase().indexOf(q) !== -1));
+    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadRooms, 50));
+  </script>
+</body>
+</html>

@@ -8,13 +8,18 @@ const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
 const bookingRoutes = require('./routes/booking.routes');
 const roomTypeRoutes = require('./routes/roomType.routes');
+const roomRoutes = require('./routes/room.routes');
 const roleApiRoutes = require('./routes/role_api.routes');
 const { sendError } = require('./utils/response');
+const { globalLimiter } = require('./middlewares/rateLimiter.middleware');
 
 const app = express();
 
 // Bat buoc khi chay sau proxy tren Render / Cloud (Moi truong san pham - Muc 7.6)
 app.set('trust proxy', 1);
+
+// Áp dụng giới hạn rate limit toàn cục cho tất cả các route API
+app.use('/api/', globalLimiter);
 
 // Security Headers (BM12)
 app.use(helmet({
@@ -22,9 +27,9 @@ app.use(helmet({
     directives: {
       defaultSrc: ["'self'"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      imgSrc: ["'self'", "data:"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      imgSrc: ["'self'", "data:", "https://ui-avatars.com"],
       connectSrc: ["'self'"]
     }
   }
@@ -53,6 +58,7 @@ app.use('/api/v1', healthRoutes);
 app.use('/api/v1', roleApiRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/room-types', roomTypeRoutes);
+app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
 
 // Route kiem tra suc khoe goc phuc vu Render Health Check

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khách hàng</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Hồ sơ khách hàng</div>
+      <p class="muted">Danh sách tài khoản vai trò khách</p>
+    </div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Họ tên</th><th>Email</th><th>Điện thoại</th><th>CCCD</th><th></th></tr>
+    </thead>
+    <tbody id="cus-body"></tbody>
+  </table>
+
+  <script>
+    let rows = [];
+    async function loadCustomers() {
+      const res = await API.request('/api/v1/customers');
+      if (res.status !== 200) {
+        showToast('Không tải được danh sách', res.data.error && res.data.error.message);
+        return;
+      }
+      rows = res.data.data.customers || [];
+      render(rows);
+    }
+    function render(list) {
+      document.getElementById('cus-body').innerHTML = list.map((c) =>
+        '<tr><td>' + c.full_name + '</td><td>' + c.email + '</td><td>' + (c.phone || '-') + '</td><td>' + (c.identity_card || '-') + '</td>' +
+        '<td><button type="button" class="btn-icon" title="Gọi khách" onclick="callCustomer(\'' + (c.phone || '') + '\')"><i class="fa-solid fa-phone"></i></button></td></tr>'
+      ).join('') || '<tr><td colspan="5">Chưa có khách hàng.</td></tr>';
+    }
+    function callCustomer(phone) {
+      if (!phone) { showToast('Không có số điện thoại'); return; }
+      window.location.href = 'tel:' + phone;
+    }
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(rows.filter((c) => (c.full_name + c.email + (c.phone || '')).toLowerCase().indexOf(q) !== -1));
+    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadCustomers, 50));
+  </script>
+</body>
+</html>

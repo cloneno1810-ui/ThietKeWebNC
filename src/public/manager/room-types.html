@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hạng phòng</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Hạng phòng</div>
+      <p class="muted">Giá cơ bản và sức chứa theo loại phòng</p>
+    </div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Tên hạng</th><th>Giá / đêm</th><th>Sức chứa</th></tr>
+    </thead>
+    <tbody id="rt-body"></tbody>
+  </table>
+
+  <script>
+    let types = [];
+    function render(list) {
+      document.getElementById('rt-body').innerHTML = list.map((rt) =>
+        '<tr><td>' + rt.name + '</td><td>' + Number(rt.base_price_per_night).toLocaleString('vi-VN') + ' đ</td><td>' + rt.max_occupancy + '</td></tr>'
+      ).join('');
+    }
+    async function loadRoomTypes() {
+      const res = await API.request('/api/v1/room-types');
+      if (res.status === 200) {
+        types = res.data.data.roomTypes || [];
+        render(types);
+      }
+    }
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(types.filter((rt) => rt.name.toLowerCase().indexOf(q) !== -1));
+    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadRoomTypes, 50));
+  </script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhật ký hệ thống</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Nhật ký hệ thống</div>
+      <p class="muted">Chỉ quản trị viên được xem</p>
+    </div>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Thời gian</th><th>Người dùng</th><th>Hành động</th><th>Chi tiết</th></tr>
+    </thead>
+    <tbody id="al-body"></tbody>
+  </table>
+
+  <script>
+    let logs = [];
+    function render(list) {
+      document.getElementById('al-body').innerHTML = list.map((l) =>
+        '<tr><td>' + String(l.created_at).replace('T', ' ').substring(0, 19) + '</td>' +
+        '<td>User ' + (l.user_id || 'System') + '</td>' +
+        '<td><span class="badge blue">' + l.action + '</span></td>' +
+        '<td>' + (l.details || '') + '</td></tr>'
+      ).join('') || '<tr><td colspan="4">Chưa có nhật ký.</td></tr>';
+    }
+    async function loadLogs() {
+      const res = await API.request('/api/v1/audit-logs');
+      if (res.status === 200) {
+        logs = res.data.data.logs || [];
+        render(logs);
+      } else {
+        showToast('Không tải được nhật ký', res.data.error && res.data.error.message);
+      }
+    }
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(logs.filter((l) => (l.action + (l.details || '')).toLowerCase().indexOf(q) !== -1));
+    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadLogs, 50));
+  </script>
+</body>
+</html>

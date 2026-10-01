@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-calendar-check"></i></div>
+      <div class="stat-info">
+        <p>Tổng đơn đặt</p>
+        <h3 id="st-total">0</h3>
+        <div class="stat-trend up" id="st-total-trend"></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-key"></i></div>
+      <div class="stat-info">
+        <p>Đã check-in</p>
+        <h3 id="st-checkedin">0</h3>
+        <div class="stat-trend up" id="st-in-trend"></div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#dcfce7;color:#166534"><i class="fa-solid fa-money-bill-wave"></i></div>
+      <div class="stat-info">
+        <p>Doanh thu dự kiến</p>
+        <h3 id="st-revenue">0đ</h3>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:#fee2e2;color:#991b1b"><i class="fa-solid fa-ban"></i></div>
+      <div class="stat-info">
+        <p>Đơn đã hủy</p>
+        <h3 id="st-cancelled">0</h3>
+        <div class="stat-trend down" id="st-cancel-trend"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="dashboard-grid">
+    <div>
+      <div class="section-header">
+        <div class="section-title">Tất cả đơn</div>
+        <div class="filter-menu">
+          <select id="status-filter" title="Lọc theo trạng thái">
+            <option value="">Bộ lọc</option>
+            <option value="pending_payment">Chờ thanh toán</option>
+            <option value="confirmed">Đã xác nhận</option>
+            <option value="checked_in">Đang ở</option>
+            <option value="checked_out">Đã trả phòng</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
+      </div>
+      <div class="booking-list" id="booking-list"></div>
+    </div>
+
+    <div id="detail-panel" style="display:none">
+      <div class="section-header">
+        <div class="section-title">Chi tiết đơn <span id="dt-id"></span></div>
+        <button type="button" class="btn-ghost" id="btn-print"><i class="fa-solid fa-file-export"></i> Xuất</button>
+      </div>
+      <div class="detail-header">
+        <div>
+          <h2 id="dt-name" style="font-size:1.4rem;margin-bottom:4px">-</h2>
+          <p id="dt-time" style="color:#64748b;font-size:0.9rem">-</p>
+        </div>
+        <div id="dt-badge"></div>
+      </div>
+      <div class="detail-content">
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:12px">Tiến trình đặt phòng</h3>
+          <div class="timeline-card">
+            <div class="card-item" style="font-weight:600"><span id="dt-roomtype"></span></div>
+            <div class="timeline" id="dt-timeline"></div>
+            <div id="action-container"></div>
+          </div>
+        </div>
+        <div>
+          <h3 style="font-size:1rem;margin-bottom:12px">Thông tin khách &amp; phòng</h3>
+          <div class="info-card">
+            <div style="display:flex;gap:12px;margin-bottom:16px">
+              <div class="tl-icon"><i class="fa-solid fa-door-open"></i></div>
+              <div>
+                <p style="font-size:0.8rem;color:#64748b">Số phòng</p>
+                <h4 id="dt-room">Chưa xếp phòng</h4>
+              </div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div class="tl-icon"><i class="fa-solid fa-user-check"></i></div>
+              <div>
+                <p style="font-size:0.8rem;color:#64748b">Khách hàng</p>
+                <h4 id="dt-phone">-</h4>
+              </div>
+            </div>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:12px">Chi tiết thanh toán</h3>
+          <div class="bill-card">
+            <div class="bill-row"><span>Tiền phòng</span><span id="bl-room">0</span></div>
+            <div class="bill-row"><span>Phụ phí</span><span>0 đ</span></div>
+            <div class="bill-row"><span>VAT (8%)</span><span id="bl-vat">0</span></div>
+            <div class="bill-total"><span>Tổng cộng</span><span id="bl-total">0</span></div>
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:12px">Vị trí khách sạn</h3>
+          <div class="map-card">
+            <div class="mini-map"></div>
+            <div class="map-caption">
+              <strong>DT07 Hotel — Phenikaa</strong>
+              Nguyễn Trác, Yên Nghĩa, Hà Đông, Hà Nội
+            </div>
+          </div>
+          <div class="partner-card">
+            <p style="font-size:0.8rem;color:#64748b;margin-bottom:10px">Nhân viên phụ trách</p>
+            <div class="partner">
+              <img alt="" src="https://ui-avatars.com/api/?name=Le+Tan&background=3b82f6&color=fff">
+              <div>
+                <h4>Lễ tân trực ca</h4>
+                <p>Check-in / check-out tại quầy</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let allBookings = [];
+    let selectedId = null;
+    let statusFilter = '';
+    let searchText = '';
+
+    function formatMoney(num) { return Number(num).toLocaleString('vi-VN') + ' đ'; }
+
+    function getBadge(status) {
+      const map = {
+        pending_payment: ['yellow', 'Chờ thanh toán'],
+        confirmed: ['blue', 'Đã xác nhận'],
+        checked_in: ['green', 'Đang ở'],
+        checked_out: ['green', 'Đã check-out'],
+        cancelled: ['red', 'Đã hủy']
+      };
+      const v = map[status] || ['gray', status];
+      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
+    }
+
+    function filtered() {
+      const q = searchText.toLowerCase();
+      return allBookings.filter((b) => {
+        if (statusFilter && b.status !== statusFilter) return false;
+        if (!q) return true;
+        return [b.booking_code, b.guest_name, b.guest_email, b.guest_phone, b.room_type_name]
+          .join(' ').toLowerCase().indexOf(q) !== -1;
+      });
+    }
+
+    async function loadData() {
+      const res = await API.request('/api/v1/bookings');
+      if (res.status === 200) {
+        allBookings = res.data.data.bookings || [];
+        renderStats();
+        renderList();
+        if (selectedId) showDetail(selectedId);
+        else if (allBookings.length) showDetail(allBookings[0].id);
+      }
+    }
+
+    function renderStats() {
+      const total = allBookings.length || 1;
+      const cin = allBookings.filter((b) => b.status === 'checked_in').length;
+      const can = allBookings.filter((b) => b.status === 'cancelled').length;
+      document.getElementById('st-total').innerText = allBookings.length;
+      document.getElementById('st-checkedin').innerText = cin;
+      document.getElementById('st-cancelled').innerText = can;
+      let rev = 0;
+      allBookings.forEach((b) => { if (b.status !== 'cancelled') rev += Number(b.total_price); });
+      document.getElementById('st-revenue').innerText = formatMoney(rev);
+      document.getElementById('st-total-trend').innerText = '↑ ' + allBookings.length + ' đơn';
+      document.getElementById('st-in-trend').innerText = '↑ ' + Math.round(cin * 100 / total) + '%';
+      document.getElementById('st-cancel-trend').innerText = '↓ ' + Math.round(can * 100 / total) + '%';
+    }
+
+    function renderList() {
+      const list = filtered();
+      const html = list.map((b) => {
+        return '<div class="booking-card' + (selectedId === b.id ? ' active' : '') + '" onclick="showDetail(' + b.id + ')" id="card-' + b.id + '">' +
+          '<div class="card-top"><div class="card-id">Mã đơn #' + b.booking_code + '</div>' + getBadge(b.status) + '</div>' +
+          '<div class="card-customer">' + b.guest_name + '</div>' +
+          '<div class="card-time">' + String(b.check_in_date).substring(0, 10) + ' → ' + String(b.check_out_date).substring(0, 10) + '</div>' +
+          '<div class="card-item"><span>1 × ' + (b.room_type_name || 'Phòng') + '</span><i class="fa-solid fa-chevron-down" style="color:#94a3b8"></i></div>' +
+          '<div class="card-address"><i class="fa-solid fa-location-dot" style="color:#3b82f6"></i> ' +
+            (b.guest_email || 'Không có email') +
+            '<button type="button" class="btn-icon" title="Gọi khách" onclick="callGuest(event,\'' + (b.guest_phone || '') + '\')"><i class="fa-solid fa-phone"></i></button>' +
+          '</div></div>';
+      }).join('');
+      document.getElementById('booking-list').innerHTML = html || '<div class="empty-state">Không có đơn phù hợp.</div>';
+    }
+
+    function callGuest(e, phone) {
+      e.stopPropagation();
+      if (!phone) { showToast('Không có số điện thoại'); return; }
+      window.location.href = 'tel:' + phone;
+    }
+
+    function showDetail(id) {
+      selectedId = id;
+      document.querySelectorAll('.booking-card').forEach((el) => el.classList.remove('active'));
+      const card = document.getElementById('card-' + id);
+      if (card) card.classList.add('active');
+      document.getElementById('detail-panel').style.display = 'block';
+      const b = allBookings.find((x) => x.id === id);
+      if (!b) return;
+
+      document.getElementById('dt-id').innerText = '#' + b.booking_code;
+      document.getElementById('dt-name').innerText = b.guest_name;
+      document.getElementById('dt-time').innerText = String(b.created_at).substring(0, 10) + ' | ' + String(b.created_at).substring(11, 16);
+      document.getElementById('dt-badge').innerHTML = getBadge(b.status);
+      document.getElementById('dt-roomtype').innerText = '1 × ' + (b.room_type_name || '');
+      document.getElementById('dt-room').innerText = b.room_number || 'Chưa xếp phòng';
+      document.getElementById('dt-phone').innerText = (b.guest_phone || 'Không có SĐT');
+
+      const price = Number(b.total_price);
+      document.getElementById('bl-room').innerText = formatMoney(price);
+      document.getElementById('bl-vat').innerText = formatMoney(price * 0.08);
+      document.getElementById('bl-total').innerText = formatMoney(price * 1.08);
+
+      const tlItem = (icon, title, time, active) =>
+        '<div class="tl-item"><div class="tl-icon" style="background:' + (active ? '#eff6ff' : '#f1f5f9') + ';color:' + (active ? '#3b82f6' : '#94a3b8') + '"><i class="fa-solid ' + icon + '"></i></div>' +
+        '<div class="tl-info"><h4 style="color:' + (active ? '#1e293b' : '#94a3b8') + '">' + title + '</h4><p>' + time + '</p></div></div>';
+
+      let timeline = tlItem('fa-receipt', 'Đã đặt phòng', String(b.created_at).substring(0, 10), true);
+      let actionBtn = '';
+      if (b.status === 'cancelled') {
+        timeline += tlItem('fa-ban', 'Đã hủy', '-', true);
+      } else {
+        const isConfirmed = b.status !== 'pending_payment';
+        const isCheckIn = b.status === 'checked_in' || b.status === 'checked_out';
+        const isCheckOut = b.status === 'checked_out';
+        timeline += tlItem('fa-thumbs-up', 'Đã xác nhận', isConfirmed ? 'Hoàn tất' : 'Chờ xử lý', isConfirmed);
+        timeline += tlItem('fa-door-open', 'Check-in', isCheckIn ? 'Đã nhận phòng' : '-', isCheckIn);
+        timeline += tlItem('fa-door-closed', 'Check-out', isCheckOut ? 'Đã trả phòng' : '-', isCheckOut);
+        if (b.status === 'confirmed' || b.status === 'pending_payment') {
+          actionBtn = '<button type="button" class="action-btn btn-primary" onclick="doAction(' + b.id + ', \'check-in\')">Thực hiện Check-in</button>';
+        } else if (b.status === 'checked_in') {
+          actionBtn = '<button type="button" class="action-btn btn-primary" style="background:#10b981" onclick="doAction(' + b.id + ', \'check-out\')">Thực hiện Check-out</button>';
+        }
+      }
+      document.getElementById('dt-timeline').innerHTML = timeline;
+      document.getElementById('action-container').innerHTML = actionBtn;
+    }
+
+    async function doAction(id, action) {
+      const res = await API.request('/api/v1/bookings/' + id + '/' + action, 'POST');
+      if (res.status === 200) {
+        showToast('Thành công', action === 'check-in' ? 'Khách đã nhận phòng.' : 'Khách đã trả phòng.', true);
+        await loadData();
+        showDetail(id);
+      } else {
+        showToast('Không thực hiện được', (res.data.error && res.data.error.message) || 'Lỗi hệ thống');
+      }
+    }
+
+    function printInvoice() {
+      const b = allBookings.find((x) => x.id === selectedId);
+      if (!b) { showToast('Chọn một đơn trước'); return; }
+      const w = window.open('', '_blank');
+      w.document.write('<html><head><title>Hóa đơn ' + b.booking_code + '</title></head><body style="font-family:Inter,sans-serif;padding:32px">' +
+        '<h2>DT07 Hotel — Hóa đơn</h2><p>Mã đơn: <strong>' + b.booking_code + '</strong></p>' +
+        '<p>Khách: ' + b.guest_name + ' · ' + (b.guest_phone || '') + '</p>' +
+        '<p>Hạng phòng: ' + (b.room_type_name || '') + ' · Phòng: ' + (b.room_number || 'Chưa xếp') + '</p>' +
+        '<p>Nhận: ' + String(b.check_in_date).substring(0,10) + ' — Trả: ' + String(b.check_out_date).substring(0,10) + '</p>' +
+        '<h3>Tổng: ' + formatMoney(b.total_price) + '</h3></body></html>');
+      w.document.close();
+      w.print();
+    }
+
+    window.addEventListener('app:search', (e) => {
+      searchText = e.detail || '';
+      renderList();
+    });
+
+    window.addEventListener('app:ready', loadData);
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(function initPage() {
+        const filter = document.getElementById('status-filter');
+        const printBtn = document.getElementById('btn-print');
+        if (!filter) { setTimeout(initPage, 50); return; }
+        filter.addEventListener('change', function () {
+          statusFilter = this.value;
+          renderList();
+        });
+        printBtn.addEventListener('click', printInvoice);
+        loadData();
+      }, 0);
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đơn của tôi</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Đơn đặt phòng của tôi</div>
+      <p class="muted">Chỉ xem và hủy đơn thuộc tài khoản đang đăng nhập</p>
+    </div>
+    <a class="btn btn-primary" href="/guest/rooms.html">Đặt phòng mới</a>
+  </div>
+  <table class="data-table">
+    <thead>
+      <tr><th>Mã đơn</th><th>Hạng phòng</th><th>Thời gian</th><th>Trạng thái</th><th>Hành động</th></tr>
+    </thead>
+    <tbody id="bk-body"></tbody>
+  </table>
+
+  <script>
+    let bookings = [];
+    function badge(status) {
+      const map = {
+        pending_payment: ['yellow', 'Chờ thanh toán'],
+        confirmed: ['blue', 'Đã xác nhận'],
+        checked_in: ['green', 'Đang ở'],
+        checked_out: ['green', 'Đã check-out'],
+        cancelled: ['red', 'Đã hủy']
+      };
+      const v = map[status] || ['gray', status];
+      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
+    }
+    function render(list) {
+      document.getElementById('bk-body').innerHTML = list.map((b) =>
+        '<tr><td>' + b.booking_code + '</td><td>' + (b.room_type_name || '-') + '</td>' +
+        '<td>' + String(b.check_in_date).substring(0,10) + ' → ' + String(b.check_out_date).substring(0,10) + '</td>' +
+        '<td>' + badge(b.status) + '</td><td>' +
+        ((b.status === 'pending_payment' || b.status === 'confirmed')
+          ? '<button type="button" class="btn btn-sm btn-danger" onclick="cancelBooking(' + b.id + ')">Hủy đơn</button>'
+          : '-') +
+        '</td></tr>'
+      ).join('') || '<tr><td colspan="5">Bạn chưa có đơn nào.</td></tr>';
+    }
+    async function loadBookings() {
+      const res = await API.request('/api/v1/bookings');
+      if (res.status === 200) {
+        bookings = res.data.data.bookings || [];
+        render(bookings);
+      }
+    }
+    async function cancelBooking(id) {
+      if (!confirm('Bạn chắc chắn muốn hủy đơn này?')) return;
+      const res = await API.request('/api/v1/bookings/' + id + '/cancel', 'PATCH');
+      if (res.status === 200) {
+        showToast('Đã hủy đơn', '', true);
+        loadBookings();
+      } else {
+        showToast('Không hủy được', res.data.error && res.data.error.message);
+      }
+    }
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(bookings.filter((b) => (b.booking_code + (b.room_type_name || '')).toLowerCase().indexOf(q) !== -1));
+    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadBookings, 50));
+  </script>
+</body>
+</html>

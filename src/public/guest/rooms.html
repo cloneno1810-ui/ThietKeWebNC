@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đặt phòng</title>
+  <link rel="stylesheet" href="/shared/layout.css">
+  <script src="/shared/auth-guard.js"></script>
+  <script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script>
+</head>
+<body>
+  <div class="toolbar">
+    <div>
+      <div class="page-h2">Chọn hạng phòng</div>
+      <p class="muted">Đặt phòng trực tuyến — giữ chỗ có thời hạn</p>
+    </div>
+  </div>
+  <div class="rooms-grid" id="rt-grid"></div>
+
+  <div class="modal-overlay" id="bookModal">
+    <div class="modal-box">
+      <h3>Đặt phòng</h3>
+      <p id="book-rt-name">Chọn ngày nhận và trả phòng</p>
+      <input type="hidden" id="book-rt-id">
+      <label>Ngày nhận phòng</label>
+      <input type="date" id="book-ci">
+      <label>Ngày trả phòng</label>
+      <input type="date" id="book-co">
+      <label>Số khách</label>
+      <input type="number" id="book-guests" min="1" value="1">
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="book-cancel">Hủy</button>
+        <button type="button" class="btn btn-primary" id="book-confirm">Xác nhận đặt</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let types = [];
+    function todayPlus(days) {
+      const d = new Date();
+      d.setDate(d.getDate() + days);
+      return d.toISOString().substring(0, 10);
+    }
+
+    async function loadRoomTypes() {
+      const res = await API.request('/api/v1/room-types');
+      if (res.status !== 200) {
+        showToast('Không tải được hạng phòng', res.data.error && res.data.error.message);
+        return;
+      }
+      types = res.data.data.roomTypes || [];
+      render(types);
+    }
+
+    function render(list) {
+      document.getElementById('rt-grid').innerHTML = list.map((rt) =>
+        '<div class="room-card">' +
+          '<h3>' + rt.name + '</h3>' +
+          '<p>' + (rt.description || '') + '</p>' +
+          '<p>Sức chứa: ' + rt.max_occupancy + ' khách</p>' +
+          '<div class="room-price">' + Number(rt.base_price_per_night).toLocaleString('vi-VN') + ' đ / đêm</div>' +
+          '<button type="button" class="btn btn-primary" style="width:100%" onclick="openBook(' + rt.id + ')">Đặt ngay</button>' +
+        '</div>'
+      ).join('') || '<div class="empty-state">Chưa có hạng phòng.</div>';
+    }
+
+    function openBook(id) {
+      const rt = types.find((x) => Number(x.id) === Number(id));
+      document.getElementById('book-rt-id').value = id;
+      document.getElementById('book-rt-name').textContent = rt ? rt.name : '';
+      document.getElementById('book-ci').value = todayPlus(1);
+      document.getElementById('book-co').value = todayPlus(3);
+      document.getElementById('bookModal').classList.add('open');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(function init() {
+        const modal = document.getElementById('bookModal');
+        if (!modal) { setTimeout(init, 50); return; }
+        document.getElementById('book-cancel').onclick = () => modal.classList.remove('open');
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('open'); });
+        document.getElementById('book-confirm').onclick = submitBook;
+        loadRoomTypes();
+      }, 0);
+    });
+
+    async function submitBook() {
+      const rtId = Number(document.getElementById('book-rt-id').value);
+      const ci = document.getElementById('book-ci').value;
+      const co = document.getElementById('book-co').value;
+      const num = Number(document.getElementById('book-guests').value || 1);
+      if (!ci || !co) { showToast('Nhập đủ ngày nhận / trả phòng'); return; }
+      const res = await API.request('/api/v1/bookings', 'POST', {
+        room_type_id: rtId, check_in_date: ci, check_out_date: co, num_guests: num
+      });
+      if (res.status === 201) {
+        showToast('Đặt phòng thành công', 'Đơn đã được tạo.', true);
+        window.location.href = '/guest/my-bookings.html';
+      } else {
+        showToast('Không đặt được phòng', (res.data.error && res.data.error.message) || 'Lỗi hệ thống');
+      }
+    }
+
+    window.addEventListener('app:search', (e) => {
+      const q = (e.detail || '').toLowerCase();
+      render(types.filter((rt) => (rt.name + (rt.description || '')).toLowerCase().indexOf(q) !== -1));
+    });
+  </script>
+</body>
+</html>
