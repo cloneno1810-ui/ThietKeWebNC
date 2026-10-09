@@ -75,6 +75,15 @@ class UserRepository {
     `;
     await db.query(sql, [id]);
   }
+
+  async updateRole(id, role) {
+    const result = await db.query(
+      `UPDATE users SET role = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1
+       RETURNING id, email, full_name, role;`,
+      [id, role]
+    );
+    return result.rows[0] || null;
+  }
 }
 
 module.exports = new UserRepository();
