@@ -13,9 +13,6 @@ DROP TABLE IF EXISTS room_types CASCADE;
 DROP TABLE IF EXISTS promotions CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
--- Hỗ trợ ràng buộc EXCLUDE cho BIGINT (room_id) trong PostgreSQL/Neon.
-CREATE EXTENSION IF NOT EXISTS btree_gist;
-
 -- 1. TABLE: users (Quản lý tài khoản & người dùng)
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
@@ -34,16 +31,6 @@ CREATE TABLE users (
 
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_role ON users(role);
-
--- Buổi 08: phiên JWT có thể thu hồi và có thời hạn.
-CREATE TABLE auth_sessions (
-    id UUID PRIMARY KEY,
-    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at TIMESTAMPTZ NOT NULL,
-    revoked_at TIMESTAMPTZ,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-CREATE INDEX idx_auth_sessions_user_expiry ON auth_sessions(user_id, expires_at);
 
 -- 2. TABLE: room_types (Quản lý hạng phòng)
 CREATE TABLE room_types (
@@ -91,19 +78,7 @@ CREATE TABLE bookings (
     hold_expires_at TIMESTAMPTZ NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_booking_dates CHECK (check_out_date > check_in_date),
-    -- Mỗi lượt giữ chỗ phải có thời điểm hết hạn. Các trạng thái khác không bị
-    -- ràng buộc cột này vì giữ chỗ đã được xác nhận hoặc hủy.
-    CONSTRAINT chk_pending_booking_has_expiry CHECK (
-        status <> 'pending_payment' OR hold_expires_at IS NOT NULL
-    ),
-    -- [) giúp khách mới nhận phòng đúng ngày khách cũ trả phòng.
-    -- Đây là bất biến trọng tâm T1/T2: không tồn tại hai lượt đặt đang hiệu lực
-    -- chồng lấn cho cùng một phòng, kể cả khi ghi trực tiếp vào CSDL.
-    CONSTRAINT exclude_overlapping_active_bookings EXCLUDE USING gist (
-        room_id WITH =,
-        daterange(check_in_date, check_out_date, '[)') WITH &&
-    ) WHERE (room_id IS NOT NULL AND status IN ('pending_payment', 'confirmed', 'checked_in'))
+    CONSTRAINT chk_booking_dates CHECK (check_out_date > check_in_date)
 );
 
 CREATE INDEX idx_bookings_user_id ON bookings(user_id);

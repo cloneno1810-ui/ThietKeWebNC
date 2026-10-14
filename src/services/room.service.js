@@ -3,19 +3,12 @@ const { AppError } = require('../utils/response');
 
 class RoomService {
   async getRooms(query) {
-    const page = Math.max(1, parseInt(query.page, 10) || 1);
-    const requestedLimit = parseInt(query.limit, 10) || 10;
-    const limit = Math.min(Math.max(1, requestedLimit), 50);
-    const sortBy = ['room_number', 'floor', 'created_at'].includes(query.sortBy) ? query.sortBy : 'room_number';
-    const sortOrder = query.sortOrder === 'desc' ? 'DESC' : 'ASC';
+    const page = parseInt(query.page, 10) || 1;
+    const limit = parseInt(query.limit, 10) || 10;
     const offset = (page - 1) * limit;
     
     const { data, total } = await roomRepository.findAll({
       status: query.status,
-      q: (query.q || '').trim(),
-      roomTypeId: query.roomTypeId ? Number(query.roomTypeId) : null,
-      sortBy,
-      sortOrder,
       limit,
       offset
     });
@@ -26,9 +19,6 @@ class RoomService {
         total,
         page,
         limit,
-        maxLimit: 50,
-        sortBy,
-        sortOrder,
         totalPages: Math.ceil(total / limit)
       }
     };

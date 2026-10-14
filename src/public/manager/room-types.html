@@ -27,7 +27,7 @@
     let types = [];
     function render(list) {
       document.getElementById('rt-body').innerHTML = list.map((rt) =>
-        '<tr><td>' + Security.escapeHtml(rt.name) + '</td><td>' + Number(rt.base_price_per_night).toLocaleString('vi-VN') + ' đ</td><td>' + Number(rt.max_occupancy) + '</td></tr>'
+        '<tr><td>' + rt.name + '</td><td>' + Number(rt.base_price_per_night).toLocaleString('vi-VN') + ' đ</td><td>' + rt.max_occupancy + '</td></tr>'
       ).join('');
     }
     async function loadRoomTypes() {

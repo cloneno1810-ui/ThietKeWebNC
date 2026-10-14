@@ -2,8 +2,6 @@ const express = require('express');
 const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
-const { validateId, bookingBody } = require('../middlewares/input.middleware');
-router.use('/:id', validateId);
 
 /**
  * GET /api/v1/bookings
@@ -26,13 +24,7 @@ router.get('/:id', authenticate, (req, res) => bookingController.getDetail(req, 
 /**
  * POST /api/v1/bookings
  */
-router.post('/', authenticate, bookingBody, (req, res) => bookingController.create(req, res));
-
-/**
- * POST /api/v1/bookings/:id/confirm
- * Mô phỏng hoàn tất thanh toán: pending_payment -> confirmed.
- */
-router.post('/:id/confirm', authenticate, (req, res) => bookingController.confirm(req, res));
+router.post('/', authenticate, (req, res) => bookingController.create(req, res));
 
 /**
  * POST /api/v1/bookings/:id/check-in

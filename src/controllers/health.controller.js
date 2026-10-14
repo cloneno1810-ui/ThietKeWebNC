@@ -12,13 +12,13 @@ exports.getHealth = async (req, res) => {
       dbTime = result.rows[0].now;
     }
   } catch (err) {
-    dbStatus = 'DISCONNECTED';
+    dbStatus = 'ERROR: ' + err.message;
   }
 
   const responseTimeMs = Date.now() - startTime;
 
-  res.status(dbStatus === 'CONNECTED' ? 200 : 503).json({
-    status: dbStatus === 'CONNECTED' ? 'UP' : 'DEGRADED',
+  res.status(200).json({
+    status: 'UP',
     topic: 'ĐỀ TÀI 07: HỆ THỐNG QUẢN LÝ KHÁCH SẠN VÀ ĐẶT PHÒNG',
     course: 'CSE702051-1-1-26(N03) - Thiết kế web nâng cao | Đại học Phenikaa',
     timestamp: new Date().toISOString(),

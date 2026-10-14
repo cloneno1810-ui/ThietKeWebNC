@@ -187,10 +187,6 @@ body {
   gap: 16px;
 }
 
-.stat-card-action { cursor: pointer; transition: transform .15s, box-shadow .15s; }
-.stat-card-action:hover { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(15, 23, 42, .09); }
-.stat-card-action:focus-visible { outline: 3px solid rgba(59, 130, 246, .35); outline-offset: 3px; }
-
 .stat-icon {
   width: 54px;
   height: 54px;
@@ -421,19 +417,6 @@ table.data-table td {
 }
 
 .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 12px; }
-.report-actions { display: flex; gap: 8px; align-items: center; }
-.report-actions input { border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 9px 10px; color: #475569; font-family: inherit; }
-.report-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
-.panel-card h3 { font-size: .95rem; margin-bottom: 18px; }
-.bar-chart { display: flex; flex-direction: column; gap: 13px; min-height: 180px; justify-content: center; }
-.bar-row { display: grid; grid-template-columns: 100px 1fr auto; gap: 9px; align-items: center; font-size: .77rem; color: #64748b; }
-.bar-row > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.bar-row strong { font-size: .73rem; color: #334155; white-space: nowrap; }
-.bar-track { height: 9px; background: #eff6ff; border-radius: 10px; overflow: hidden; }
-.bar-track i { display: block; height: 100%; border-radius: 10px; background: linear-gradient(90deg, #60a5fa, #2563eb); }
-.upload-panel { margin-top: 18px; }
-.upload-row { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
-.upload-row input[type=file] { max-width: 300px; font-family: inherit; font-size: .85rem; }
 .page-h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 4px; }
 .muted { color: var(--muted); font-size: 0.85rem; }
 
@@ -544,7 +527,7 @@ table.data-table td {
 .partner p { font-size: 0.78rem; color: #94a3b8; }
 
 @media (max-width: 1100px) {
-  .stats-row, .dashboard-grid, .detail-content, .report-grid { grid-template-columns: 1fr; }
+  .stats-row, .dashboard-grid, .detail-content { grid-template-columns: 1fr; }
   .sidebar { width: 84px; }
   .sidebar-logo .brand-text, .menu-item span, .menu-label { display: none; }
   .search-bar { width: 180px; }

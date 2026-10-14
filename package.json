@@ -7,12 +7,7 @@
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
     "test": "node test_session4.js",
-    "test:session4": "node test_session4.js",
-    "migrate:session6": "node database/migrate_session6.js",
-    "migrate:session7": "node database/migrate_session7.js",
-    "migrate:session8": "node database/migrate_session8.js",
-    "security:scan": "node scripts/scan-secrets.cjs",
-    "postman:session8": "node postman/create-session8-bundle.cjs"
+    "test:session4": "node test_session4.js"
   },
   "keywords": [
     "express",
@@ -33,7 +28,6 @@
     "helmet": "^7.1.0",
     "joi": "^18.2.9",
     "jsonwebtoken": "^9.0.3",
-    "multer": "^2.0.2",
     "pg": "^8.12.0"
   },
   "devDependencies": {

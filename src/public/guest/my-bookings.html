@@ -5,117 +5,71 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đơn của tôi</title>
   <link rel="stylesheet" href="/shared/layout.css">
-  <link rel="stylesheet" href="/shared/hotel.css">
   <script src="/shared/auth-guard.js"></script>
   <script src="/shared/api.js"></script>
-  <script src="/shared/hotel.js"></script>
   <script src="/shared/ui-wrapper.js"></script>
 </head>
-<body class="hotel-page" data-hotel-page="bookings">
-  <main>
-  <section class="hotel-guest-hero"><div class="hotel-container"><div><span class="hotel-eyebrow">KỲ NGHỈ CỦA BẠN</span><h1>Những chuyến đi đáng nhớ.</h1><p>Theo dõi lịch lưu trú và quản lý đơn đặt phòng của bạn.</p></div><a class="hotel-button yellow" href="/guest/rooms.html">Đặt phòng mới ↗</a></div></section>
-  <div class="hotel-container" style="padding-bottom:60px">
-  <div class="hotel-booking-summary"><div><small>Tất cả đặt phòng</small><strong id="bookings-total">—</strong></div><div><small>Chờ thanh toán</small><strong id="bookings-pending">—</strong></div><div><small>Đã xác nhận / đang ở</small><strong id="bookings-active">—</strong></div></div>
+<body>
   <div class="toolbar">
     <div>
-      <h2 class="page-h2">Đơn đặt phòng của tôi</h2>
+      <div class="page-h2">Đơn đặt phòng của tôi</div>
+      <p class="muted">Chỉ xem và hủy đơn thuộc tài khoản đang đăng nhập</p>
     </div>
-    <div class="hotel-booking-tools"><label class="hotel-search"><span id="booking-search-icon" aria-hidden="true"></span><input id="booking-search" type="search" aria-label="Tìm đơn đặt phòng" placeholder="Tìm mã đơn hoặc hạng phòng…"></label><select class="hotel-filter" id="booking-filter" aria-label="Lọc đơn theo trạng thái"><option value="">Tất cả trạng thái</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="checked_in">Đang ở</option><option value="checked_out">Đã trả phòng</option><option value="cancelled">Đã hủy</option><option value="no_show">Không đến nhận phòng</option></select></div>
+    <a class="btn btn-primary" href="/guest/rooms.html">Đặt phòng mới</a>
   </div>
-  <div class="hotel-table-wrap"><table class="data-table">
+  <table class="data-table">
     <thead>
       <tr><th>Mã đơn</th><th>Hạng phòng</th><th>Thời gian</th><th>Trạng thái</th><th>Hành động</th></tr>
     </thead>
     <tbody id="bk-body"></tbody>
-  </table></div>
-  <p class="muted" style="font-size:11px;margin-top:20px">Bạn có thể hủy các đơn đang chờ thanh toán hoặc đã xác nhận, trước khi nhận phòng.</p>
-  </div></main>
+  </table>
 
   <script>
     let bookings = [];
-    let searchText = '';
-    let statusFilter = '';
-    const cancellingIds = new Set();
     function badge(status) {
       const map = {
         pending_payment: ['yellow', 'Chờ thanh toán'],
         confirmed: ['blue', 'Đã xác nhận'],
         checked_in: ['green', 'Đang ở'],
         checked_out: ['green', 'Đã check-out'],
-        cancelled: ['red', 'Đã hủy'],
-        no_show: ['gray', 'Không đến nhận phòng']
+        cancelled: ['red', 'Đã hủy']
       };
       const v = map[status] || ['gray', status];
-      return '<span class="badge ' + v[0] + '">' + Security.escapeHtml(v[1]) + '</span>';
+      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
     }
     function render(list) {
-      list = list.filter(b => (!statusFilter || b.status === statusFilter) && (b.booking_code + ' ' + (b.room_type_name || '')).toLowerCase().includes(searchText));
       document.getElementById('bk-body').innerHTML = list.map((b) =>
-        '<tr><td class="hotel-booking-code">' + Security.escapeHtml(b.booking_code) + '</td><td>' + Security.escapeHtml(b.room_type_name || '-') + '</td>' +
-        '<td class="hotel-booking-date">' + String(b.check_in_date).substring(0,10) + ' → ' + String(b.check_out_date).substring(0,10) + '</td>' +
+        '<tr><td>' + b.booking_code + '</td><td>' + (b.room_type_name || '-') + '</td>' +
+        '<td>' + String(b.check_in_date).substring(0,10) + ' → ' + String(b.check_out_date).substring(0,10) + '</td>' +
         '<td>' + badge(b.status) + '</td><td>' +
         ((b.status === 'pending_payment' || b.status === 'confirmed')
-          ? '<button type="button" class="btn btn-sm btn-danger" data-cancel-booking="' + b.id + '"' +
-            (cancellingIds.has(String(b.id)) ? ' disabled>Đang hủy…</button>' : '>Hủy đơn</button>')
+          ? '<button type="button" class="btn btn-sm btn-danger" onclick="cancelBooking(' + b.id + ')">Hủy đơn</button>'
           : '-') +
         '</td></tr>'
-      ).join('') || '<tr><td colspan="5">Không có đơn đặt phòng phù hợp.</td></tr>';
-      document.querySelectorAll('[data-cancel-booking]').forEach((button) => {
-        button.addEventListener('click', () => cancelBooking(button.dataset.cancelBooking));
-      });
+      ).join('') || '<tr><td colspan="5">Bạn chưa có đơn nào.</td></tr>';
     }
     async function loadBookings() {
-      try {
-        const res = await API.request('/api/v1/bookings');
-        if (res.status === 200) {
-          bookings = res.data.data.bookings || [];
-          document.getElementById('bookings-total').textContent = bookings.length;
-          document.getElementById('bookings-pending').textContent = bookings.filter(b => b.status === 'pending_payment').length;
-          document.getElementById('bookings-active').textContent = bookings.filter(b => ['confirmed', 'checked_in'].includes(b.status)).length;
-          render(bookings);
-        } else {
-          bookings = [];
-          render([]);
-          showToast('Không tải được đơn đặt phòng', (res.data.error && res.data.error.message) || 'Vui lòng thử lại.');
-        }
-      } catch (err) {
-        bookings = [];
-        render([]);
-        showToast('Lỗi kết nối', 'Không thể tải danh sách đơn đặt phòng.');
-      }
-    }
-    async function cancelBooking(id) {
-      id = String(id);
-      if (cancellingIds.has(id)) return;
-      if (!confirm('Bạn chắc chắn muốn hủy đơn này?')) return;
-      cancellingIds.add(id);
-      render(bookings);
-      try {
-        const res = await API.request('/api/v1/bookings/' + id + '/cancel', 'PATCH', {});
-        if (res.status === 200) {
-          showToast('Đã hủy đơn', 'Trạng thái đơn đã được cập nhật.', true);
-          await loadBookings();
-        } else {
-          showToast('Không hủy được', (res.data.error && res.data.error.message) || 'Vui lòng thử lại.');
-          if (res.status === 422 || res.status === 404) await loadBookings();
-        }
-      } catch (err) {
-        showToast('Không hủy được', err.message || 'Không thể gửi yêu cầu hủy đơn.');
-      } finally {
-        cancellingIds.delete(id);
+      const res = await API.request('/api/v1/bookings');
+      if (res.status === 200) {
+        bookings = res.data.data.bookings || [];
         render(bookings);
       }
     }
+    async function cancelBooking(id) {
+      if (!confirm('Bạn chắc chắn muốn hủy đơn này?')) return;
+      const res = await API.request('/api/v1/bookings/' + id + '/cancel', 'PATCH');
+      if (res.status === 200) {
+        showToast('Đã hủy đơn', '', true);
+        loadBookings();
+      } else {
+        showToast('Không hủy được', res.data.error && res.data.error.message);
+      }
+    }
     window.addEventListener('app:search', (e) => {
-      searchText = (e.detail || '').toLowerCase();
-      render(bookings);
+      const q = (e.detail || '').toLowerCase();
+      render(bookings.filter((b) => (b.booking_code + (b.room_type_name || '')).toLowerCase().indexOf(q) !== -1));
     });
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('booking-search-icon').innerHTML = Hotel.icon('search');
-      document.getElementById('booking-search').addEventListener('input', event => { searchText = event.target.value.trim().toLowerCase(); render(bookings); });
-      document.getElementById('booking-filter').addEventListener('change', event => { statusFilter = event.target.value; render(bookings); });
-      loadBookings();
-    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(loadBookings, 50));
   </script>
 </body>
 </html>

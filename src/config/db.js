@@ -21,12 +21,6 @@ module.exports = {
   },
 
   /**
-   * Chỉ phân loại mã lỗi PostgreSQL; repository vẫn dùng truy vấn tham số hóa.
-   * 23P01 là lỗi EXCLUDE: đặt phòng chồng lấn cùng một phòng.
-   */
-  isExclusionViolation: (error) => error && error.code === '23P01',
-
-  /**
    * Han the template literal cho cac truy van phuc tap hon.
    * Vi du: await sql`SELECT * FROM users WHERE id = ${userId}`
    */

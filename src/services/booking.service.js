@@ -1,6 +1,5 @@
 const bookingRepository = require('../repositories/booking.repository');
 const { AppError } = require('../utils/response');
-const crypto = require('crypto');
 
 class BookingService {
   /**
@@ -12,7 +11,6 @@ class BookingService {
    * - Nếu truy cập chéo sang booking của người khác -> Bị từ chối với mã 403 FORBIDDEN.
    */
   async getBookingDetail(bookingId, currentUser) {
-    await bookingRepository.expireHolds();
     const booking = await bookingRepository.findById(bookingId);
     if (!booking) {
       throw new AppError('RESOURCE_NOT_FOUND', `Không tìm thấy đơn đặt phòng với ID ${bookingId}.`, 404);
@@ -38,7 +36,6 @@ class BookingService {
    * Lấy danh sách đơn đặt phòng theo vai trò
    */
   async getBookings(currentUser) {
-    await bookingRepository.expireHolds();
     const isStaff = ['admin', 'manager', 'receptionist'].includes(currentUser.role);
 
     if (isStaff) {
@@ -54,7 +51,6 @@ class BookingService {
    * Guest chỉ được hủy đơn của chính mình. Truy cập chéo → 403 FORBIDDEN.
    */
   async cancelBooking(bookingId, currentUser) {
-    await bookingRepository.expireHolds();
     const booking = await bookingRepository.findById(bookingId);
     if (!booking) {
       throw new AppError('RESOURCE_NOT_FOUND', `Không tìm thấy đơn đặt phòng với ID ${bookingId}.`, 404);
@@ -72,35 +68,20 @@ class BookingService {
     }
 
     if (booking.status === 'cancelled') {
-      throw new AppError('INVALID_STATE', 'Đơn đặt phòng này đã được hủy trước đó.', 422);
+      throw new AppError('INVALID_INPUT', 'Đơn đặt phòng này đã được hủy trước đó.', 400);
     }
 
-    if (!['pending_payment', 'confirmed'].includes(booking.status)) {
-      throw new AppError('INVALID_STATE', `Không thể hủy đơn ở trạng thái ${booking.status}.`, 422);
+    if (['checked_out', 'no_show'].includes(booking.status)) {
+      throw new AppError('INVALID_INPUT', `Không thể hủy đơn ở trạng thái ${booking.status}.`, 400);
     }
 
-    const updated = await bookingRepository.cancelActiveBooking(booking.id, currentUser.id, isStaff);
-    if (!updated) {
-      throw new AppError('INVALID_STATE', 'Trạng thái đơn đã thay đổi. Vui lòng tải lại danh sách.', 422);
-    }
+    const updated = await bookingRepository.updateStatus(booking.id, 'cancelled');
     return updated;
   }
 
   async createBooking(data, currentUser) {
-    await bookingRepository.expireHolds();
-
-    if (!data.room_type_id || !data.check_in_date || !data.check_out_date || !data.num_guests) {
-      throw new AppError('INVALID_INPUT', 'Cần có room_type_id, ngày nhận, ngày trả và số khách.', 400);
-    }
-
-    const checkIn = new Date(`${data.check_in_date}T00:00:00Z`);
-    const checkOut = new Date(`${data.check_out_date}T00:00:00Z`);
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime()) || checkOut <= checkIn) {
-      throw new AppError('INVALID_INPUT', 'Ngày trả phòng phải sau ngày nhận phòng.', 400);
-    }
-
-    // Mã có phần ngẫu nhiên để 50 request song song không đụng UNIQUE booking_code.
-    data.booking_code = `BK${Date.now().toString().slice(-8)}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
+    // Generate unique booking code
+    data.booking_code = 'BK' + Date.now().toString().slice(-8);
     // Bind to user if logged in as guest
     if (currentUser.role === 'guest') {
       data.user_id = currentUser.id;
@@ -119,37 +100,13 @@ class BookingService {
       throw new AppError('RESOURCE_NOT_FOUND', 'Hạng phòng không tồn tại.', 404);
     }
     
-    if (Number(data.num_guests) > Number(roomType.max_occupancy)) {
-      throw new AppError('INVALID_INPUT', 'Số khách vượt sức chứa của hạng phòng.', 400);
-    }
-    // Price is always calculated by the server, never trusted from a client.
-    {
+    // Simple mock logic: if total price isn't provided, calculate basic price
+    if (!data.total_price) {
       const days = (new Date(data.check_out_date) - new Date(data.check_in_date)) / (1000 * 60 * 60 * 24);
       data.total_price = roomType.base_price_per_night * (days > 0 ? days : 1);
     }
     
-    const holdMinutes = Number.parseInt(process.env.HOLD_DURATION_MINUTES || '30', 10);
-    try {
-      const booking = await bookingRepository.createHold(data, Number.isFinite(holdMinutes) && holdMinutes > 0 ? holdMinutes : 30);
-      if (!booking) {
-        throw new AppError('ROOM_UNAVAILABLE', 'Không còn phòng trống cho khoảng ngày đã chọn.', 409);
-      }
-      return booking;
-    } catch (error) {
-      if (bookingRepository.isExclusionViolation && bookingRepository.isExclusionViolation(error)) {
-        throw new AppError('ROOM_UNAVAILABLE', 'Phòng vừa được khách khác giữ chỗ. Vui lòng chọn khoảng ngày khác.', 409);
-      }
-      throw error;
-    }
-  }
-
-  async confirmBooking(bookingId, currentUser) {
-    await bookingRepository.expireHolds();
-    const booking = await this.getBookingDetail(bookingId, currentUser);
-    if (booking.status !== 'pending_payment') {
-      throw new AppError('INVALID_STATE', `Chỉ xác nhận được đơn đang chờ thanh toán. Trạng thái hiện tại: ${booking.status}.`, 422);
-    }
-    return bookingRepository.confirmHold(booking.id);
+    return await bookingRepository.create(data);
   }
 
   async checkInBooking(id, currentUser) {
@@ -161,8 +118,8 @@ class BookingService {
     const booking = await bookingRepository.findById(id);
     if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
     
-    if (booking.status !== 'confirmed') {
-      throw new AppError('INVALID_STATE', `Không thể check-in phòng đang ở trạng thái ${booking.status}.`, 422);
+    if (booking.status !== 'confirmed' && booking.status !== 'pending_payment') {
+      throw new AppError('INVALID_STATE', `Không thể check-in phòng đang ở trạng thái ${booking.status}.`, 400);
     }
     
     // Update booking status
@@ -187,7 +144,7 @@ class BookingService {
     if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
     
     if (booking.status !== 'checked_in') {
-      throw new AppError('INVALID_STATE', `Không thể check-out phòng chưa check-in. Trạng thái: ${booking.status}.`, 422);
+      throw new AppError('INVALID_STATE', `Không thể check-out phòng chưa check-in. Trạng thái: ${booking.status}.`, 400);
     }
     
     const updated = await bookingRepository.updateStatus(booking.id, 'checked_out');
