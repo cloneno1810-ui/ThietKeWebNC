@@ -10,6 +10,7 @@ const bookingRoutes = require('./routes/booking.routes');
 const roomTypeRoutes = require('./routes/roomType.routes');
 const roomRoutes = require('./routes/room.routes');
 const roleApiRoutes = require('./routes/role_api.routes');
+const fileRoutes = require('./routes/file.routes');
 const { sendError } = require('./utils/response');
 const { globalLimiter } = require('./middlewares/rateLimiter.middleware');
 
@@ -60,6 +61,7 @@ app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/room-types', roomTypeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/bookings', bookingRoutes);
+app.use('/api/v1', fileRoutes);
 
 // Route kiem tra suc khoe goc phuc vu Render Health Check
 app.get('/health', (req, res) => res.redirect('/api/v1/health'));
@@ -79,6 +81,11 @@ app.use('/api', (req, res) => {
 
 // Xu ly loi tap trung (BM9 - Khong lo thong tin loi noi bo / SQL ra ngoai)
 app.use((err, req, res, next) => {
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    err.statusCode = 400;
+    err.code = 'INVALID_FILE';
+    err.message = 'Tệp vượt quá dung lượng tối đa 5 MB.';
+  }
   console.error(`[LOI HE THONG] RequestId: ${req.id} -`, err);
   return sendError(res, err);
 });

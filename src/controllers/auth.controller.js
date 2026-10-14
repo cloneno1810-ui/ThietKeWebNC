@@ -1,6 +1,7 @@
 const authService = require('../services/auth.service');
 const { sendSuccess, sendError } = require('../utils/response');
 const { tokenCookieOptions, clearTokenCookieOptions } = require('../utils/cookie');
+const auditRepository = require('../repositories/audit.repository');
 
 class AuthController {
   /**
@@ -20,6 +21,8 @@ class AuthController {
       // Gửi cookie HTTP-Only (BM7) — Path=/, SameSite=Lax
       res.cookie('token', result.token, tokenCookieOptions());
 
+      auditRepository.log({ userId: result.user.id, action: 'USER_REGISTERED', targetEntity: 'users', entityId: result.user.id, details: 'Đăng ký tài khoản khách.', ipAddress: req.ip }).catch(() => {});
+
       return sendSuccess(res, result, 201);
     } catch (err) {
       return sendError(res, err);
@@ -35,6 +38,7 @@ class AuthController {
       const result = await authService.login({ email, password });
 
       res.cookie('token', result.token, tokenCookieOptions());
+      auditRepository.log({ userId: result.user.id, action: 'USER_LOGIN', targetEntity: 'users', entityId: result.user.id, details: 'Đăng nhập thành công.', ipAddress: req.ip }).catch(() => {});
 
       return sendSuccess(res, result, 200);
     } catch (err) {

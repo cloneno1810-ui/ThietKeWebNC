@@ -2,8 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
 const reportService = require('../services/report.service');
+const userRepository = require('../repositories/user.repository');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
-const { sendSuccess, sendError } = require('../utils/response');
+const { sendSuccess, sendError, AppError } = require('../utils/response');
+const { audit } = require('../middlewares/audit.middleware');
 
 /**
  * 1. API ĐẶC QUYỀN ADMIN: GET /api/v1/audit-logs
@@ -72,6 +74,25 @@ router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), a
     res.setHeader('Content-Type', 'text/csv; charset=utf-8');
     res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-khach-san.csv"');
     return res.status(200).send(csv);
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+router.patch('/users/:id/role', authenticate, authorize('admin'), audit({
+  action: 'USER_ROLE_CHANGED',
+  targetEntity: 'users',
+  getEntityId: (req) => Number(req.params.id),
+  getDetails: (req) => `Cập nhật vai trò thành ${req.body.role}`
+}), async (req, res) => {
+  try {
+    const allowedRoles = ['guest', 'receptionist', 'manager', 'admin'];
+    if (!allowedRoles.includes(req.body.role)) {
+      return sendError(res, new AppError('INVALID_INPUT', 'Vai trò không hợp lệ.', 400));
+    }
+    const user = await userRepository.updateRole(req.params.id, req.body.role);
+    if (!user) return sendError(res, new AppError('RESOURCE_NOT_FOUND', 'Không tìm thấy người dùng.', 404));
+    return sendSuccess(res, { user }, 200);
   } catch (err) {
     return sendError(res, err);
   }

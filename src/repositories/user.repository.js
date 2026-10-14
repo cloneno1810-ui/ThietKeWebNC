@@ -53,6 +53,20 @@ class UserRepository {
   }
 
   /**
+   * Cập nhật vai trò người dùng
+   */
+  async updateRole(id, role) {
+    const sql = `
+      UPDATE users
+      SET role = $1, updated_at = CURRENT_TIMESTAMP
+      WHERE id = $2
+      RETURNING id, email, full_name, phone, identity_card, role, created_at, updated_at;
+    `;
+    const result = await db.query(sql, [role, id]);
+    return result.rows[0] || null;
+  }
+
+  /**
    * Cập nhật số lần đăng nhập sai & thời gian khóa tài khoản
    */
   async updateFailedAttempts(id, failedAttempts, lockedUntil = null) {
