@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const reportService = require('../services/report.service');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { sendSuccess, sendError } = require('../utils/response');
 
@@ -43,6 +44,34 @@ router.get('/reports/revenue', authenticate, authorize('manager', 'admin'), asyn
       description: 'API Báo cáo Doanh thu Khách sạn (Đặc quyền Quản lý - Manager & Admin)',
       report: summary.rows[0]
     });
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+/** Ba báo cáo tổng hợp Buổi 07, có điều kiện thời gian. */
+router.get('/reports', authenticate, authorize('manager', 'admin'), async (req, res) => {
+  try {
+    const reports = await reportService.getAll(req.query);
+    return sendSuccess(res, reports, 200);
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+/** Xuất CSV dùng dấu ; để mở đúng trong phần mềm bảng tính với dữ liệu tiếng Việt. */
+router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), async (req, res) => {
+  try {
+    const reports = await reportService.getAll(req.query);
+    const escapeCsv = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const rows = [['Báo cáo', 'Nhãn', 'Số lượng', 'Doanh thu']];
+    reports.revenueByStatus.forEach((r) => rows.push(['Doanh thu theo trạng thái', r.status, r.booking_count, r.revenue]));
+    reports.bookingsByDay.forEach((r) => rows.push(['Đơn theo ngày', String(r.report_date).slice(0, 10), r.booking_count, r.revenue]));
+    reports.occupancyByRoomType.forEach((r) => rows.push(['Công suất hạng phòng', r.name, `${r.occupied_rooms}/${r.total_rooms}`, '']));
+    const csv = `\uFEFF${rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n')}`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-khach-san.csv"');
+    return res.status(200).send(csv);
   } catch (err) {
     return sendError(res, err);
   }
