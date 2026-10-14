@@ -5,7 +5,8 @@ const registerSchema = Joi.object({
     'string.email': 'Email không hợp lệ.',
     'any.required': 'Vui lòng cung cấp email.'
   }),
-  password: Joi.string().min(8).required().messages({
+  password: Joi.string().min(8).custom((value, helpers) => Buffer.byteLength(value, 'utf8') <= 72 ? value : helpers.error('string.max')).required().messages({
+    'string.max': 'Mật khẩu tối đa 72 byte UTF-8.',
     'string.min': 'Mật khẩu phải chứa ít nhất 8 ký tự.',
     'any.required': 'Vui lòng cung cấp mật khẩu.'
   }),
@@ -28,7 +29,8 @@ const loginSchema = Joi.object({
     'string.email': 'Email không hợp lệ.',
     'any.required': 'Vui lòng cung cấp email.'
   }),
-  password: Joi.string().required().messages({
+  password: Joi.string().custom((value, helpers) => Buffer.byteLength(value, 'utf8') <= 72 ? value : helpers.error('string.max')).required().messages({
+    'string.max': 'Mật khẩu tối đa 72 byte UTF-8.',
     'any.required': 'Vui lòng cung cấp mật khẩu.'
   })
 });

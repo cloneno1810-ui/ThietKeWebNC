@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập</title>
+  <script src="/shared/api.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -245,12 +246,15 @@
     .help-wrapper:hover .help-tooltip,
     .help-wrapper:focus-within .help-tooltip { display: block; }
   </style>
+  <link rel="stylesheet" href="/shared/hotel.css">
 </head>
-<body>
+<body class="hotel-auth">
+<aside class="auth-story" aria-label="Chào mừng đến DT07 Hotel"><img src="/assets/hotel/hero.jpg" width="2000" height="1050" alt="Không gian nghỉ dưỡng — ảnh minh họa"><div class="auth-story-content"><span>DT07 HOTEL · PHENIKAA STAY</span><h2>Một khoảng nghỉ.<br>Nhiều trải nghiệm.</h2><p>Chọn phòng cho chuyến đi tiếp theo.<br>Những phút giây thư thái đang chờ bạn.</p></div></aside>
 <div class="card">
   <a class="home-link" href="/">← Về trang chủ</a>
   <div class="brand">DT</div>
   <h1>Đăng nhập</h1>
+  <p class="auth-intro">Chào mừng bạn trở lại. Đăng nhập để đặt phòng<br>và quản lý những kỳ nghỉ của mình.</p>
 
   <form id="frm">
     <!-- Ô Email -->
@@ -291,7 +295,7 @@
       <a href="#" id="linkForgot">Quên mật khẩu</a>
 
       <span class="help-wrapper">
-        <a href="#" onclick="return false;">
+        <a href="#" id="helpLink">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
           </svg>
@@ -299,21 +303,16 @@
         </a>
         <!-- Tooltip tài khoản mẫu hiện khi hover -->
         <div class="help-tooltip">
-          <table>
-            <tr><td>Admin:</td>       <td>admin@hotel.com</td></tr>
-            <tr><td>Quản lý:</td>     <td>manager@hotel.com</td></tr>
-            <tr><td>Lễ tân:</td>      <td>receptionist@hotel.com</td></tr>
-            <tr><td>Khách hàng:</td>  <td>guest1@gmail.com</td></tr>
-            <tr><td colspan="2" style="padding-top:6px; color:#fbbf24">Mật khẩu: Password123!</td></tr>
-          </table>
+          Dùng tài khoản được nhóm cấp. Liên hệ quản trị viên nếu cần hỗ trợ.
         </div>
       </span>
     </div>
 
     <button type="submit" id="btn">ĐĂNG NHẬP</button>
-    <button type="button" id="btnShowRegister" class="btn-secondary">ĐĂNG KÝ TÀI KHOẢN</button>
+    <button type="button" id="btnShowRegister" class="btn-secondary">TẠO TÀI KHOẢN MỚI</button>
     <div id="msg" class="msg"></div>
   </form>
+  <p class="auth-caption">DT07 Hotel · Một kỳ nghỉ, trong tầm tay bạn.</p>
 </div>
 
 <!-- Modal Quên mật khẩu -->
@@ -321,11 +320,11 @@
   <div class="modal-box">
     <button class="modal-close" id="modalClose">&times;</button>
     <h3>Khôi phục mật khẩu</h3>
-    <p>Nhập email tài khoản, hệ thống sẽ gửi hướng dẫn đặt lại mật khẩu.</p>
+    <p>Liên hệ quản trị viên đã cấp tài khoản để được hỗ trợ khôi phục mật khẩu. Bạn cần cung cấp email tài khoản.</p>
     <input type="email" id="forgotEmail" placeholder="Nhập địa chỉ email của bạn">
     <div class="modal-actions">
       <button class="btn-cancel" id="modalCancel">Hủy bỏ</button>
-      <button class="btn-confirm" id="modalConfirm">Gửi yêu cầu</button>
+      <button class="btn-confirm" id="modalConfirm">Xem hướng dẫn</button>
     </div>
     <div id="forgotMsg" style="margin-top:12px; font-size:0.88rem; display:none"></div>
   </div>
@@ -355,6 +354,8 @@
 
 <script>
   /* =================== ICON MẮT =================== */
+  document.getElementById('helpLink').addEventListener('click', function(e) { e.preventDefault(); });
+
   document.getElementById('eyeBtn').addEventListener('click', function() {
     var pw = document.getElementById('pw');
     var isHidden = pw.type === 'password';
@@ -391,14 +392,9 @@
       msgEl.textContent = 'Vui lòng nhập địa chỉ email.';
       return;
     }
-    // Giả lập gửi email (chức năng đầy đủ sẽ triển khai ở Buổi sau)
+    // Account recovery is currently handled by the administrator; no email is sent here.
     msgEl.style.cssText = 'display:block; color:#166534';
-    msgEl.textContent = 'Đã gửi hướng dẫn đến ' + email + '. Vui lòng kiểm tra hộp thư!';
-    document.getElementById('modalConfirm').disabled = true;
-    setTimeout(function () {
-      closeModal();
-      document.getElementById('modalConfirm').disabled = false;
-    }, 2000);
+    msgEl.textContent = 'Liên hệ quản trị viên và cung cấp email tài khoản: ' + email + '. Quản trị viên sẽ hướng dẫn bạn khôi phục quyền truy cập.';
   });
 
   /* =================== MODAL ĐĂNG KÝ =================== */
@@ -506,15 +502,14 @@
       if (r.status === 200 && r.data.success) {
         var user  = r.data.data.user;
         var token = r.data.data.token;
-        localStorage.setItem('token', token);
+        localStorage.removeItem('token');
         localStorage.setItem('role',  user.role);
         localStorage.setItem('fullName', user.fullName || user.email);
         localStorage.setItem('email', user.email);
 
         var dest = ROLE_API[user.role] || '/api/v1/bookings';
         msgEl.className = 'msg ok';
-        msgEl.innerHTML = '<strong>Thành công!</strong> Chào <strong>' + user.fullName
-          + '</strong> (' + user.role + '). Đang chuyển đến <code>' + dest + '</code>...';
+        msgEl.textContent = 'Thành công! Chào ' + user.fullName + ' (' + user.role + '). Đang chuyển trang...';
         msgEl.style.display = 'block';
 
         setTimeout(function() { window.location.href = dest; }, 900);

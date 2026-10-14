@@ -3,10 +3,21 @@ const jwt = require('jsonwebtoken');
 const userRepository = require('../repositories/user.repository');
 const { AppError } = require('../utils/response');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hotel_super_secret_jwt_key_2026';
-const JWT_EXPIRES_IN = '1d';
+const crypto = require('crypto');
+const sessions = require('../repositories/session.repository');
+const security = require('../config/security');
+const dummyHash = bcrypt.hashSync(crypto.randomBytes(32).toString('hex'), 10);
 
 class AuthService {
+  async issueSession(user) {
+    const id = crypto.randomUUID();
+    const token = jwt.sign({ id: user.id }, security.jwtSecret, {
+      ...security.jwtOptions, expiresIn: security.accessTtl, jwtid: id
+    });
+    await sessions.create(id, user.id, new Date(jwt.decode(token).exp * 1000));
+    return { user: { id: user.id, email: user.email, fullName: user.full_name, role: user.role },
+      token, expiresIn: security.accessTtl };
+  }
   /**
    * Đăng ký tài khoản khách hàng mới
    */
@@ -21,8 +32,8 @@ class AuthService {
       throw new AppError('INVALID_INPUT', 'Định dạng email không hợp lệ.', 400);
     }
 
-    if (password.length < 6) {
-      throw new AppError('INVALID_INPUT', 'Mật khẩu phải có độ dài tối thiểu 6 ký tự.', 400);
+    if (password.length < 8 || Buffer.byteLength(password, 'utf8') > 72) {
+      throw new AppError('INVALID_INPUT', 'Mật khẩu phải từ 8 ký tự đến 72 byte UTF-8.', 400);
     }
 
     // Kiểm tra email đã tồn tại chưa
@@ -47,22 +58,7 @@ class AuthService {
     });
 
     // Tạo token JWT tự động đăng nhập
-    const token = jwt.sign(
-      { id: newUser.id, email: newUser.email, role: newUser.role },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    return {
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        fullName: newUser.full_name,
-        role: newUser.role,
-        createdAt: newUser.created_at
-      },
-      token
-    };
+    return this.issueSession(newUser);
   }
 
   /**
@@ -75,39 +71,30 @@ class AuthService {
 
     const user = await userRepository.findByEmail(email.toLowerCase().trim());
     if (!user) {
+      await bcrypt.compare(password, dummyHash);
       throw new AppError('UNAUTHORIZED', 'Email hoặc mật khẩu không chính xác.', 401);
     }
 
     // Kiểm tra tài khoản có đang bị khóa (NFR-06 / BM10)
     if (user.locked_until && new Date(user.locked_until) > new Date()) {
-      const remainingMinutes = Math.ceil((new Date(user.locked_until) - new Date()) / (60 * 1000));
       throw new AppError(
-        'ACCOUNT_LOCKED',
-        `Tài khoản đang tạm thời bị khóa do đăng nhập sai nhiều lần. Vui lòng thử lại sau ${remainingMinutes} phút.`,
-        423
+        'TOO_MANY_REQUESTS',
+        'Bạn đã thử đăng nhập quá nhiều lần. Vui lòng thử lại sau 15 phút.',
+        429
       );
     }
 
     // So sánh mật khẩu bằng bcrypt
     const isMatch = await bcrypt.compare(password, user.password_hash);
     if (!isMatch) {
-      const failedAttempts = (user.failed_attempts || 0) + 1;
-      let lockedUntil = null;
-
-      // Khóa tài khoản 15 phút nếu sai liên tiếp 5 lần
-      if (failedAttempts >= 5) {
-        lockedUntil = new Date(Date.now() + 15 * 60 * 1000);
-        await userRepository.updateFailedAttempts(user.id, failedAttempts, lockedUntil);
-        throw new AppError(
-          'ACCOUNT_LOCKED',
-          'Bạn đã nhập sai mật khẩu 5 lần. Tài khoản bị tạm khóa 15 phút.',
-          423
-        );
+      const attempt = await userRepository.recordFailedLogin(user.id);
+      if (attempt.locked_until && new Date(attempt.locked_until) > new Date()) {
+        // Return the same first-five response as an unknown account. The next attempt is 429.
+        throw new AppError('UNAUTHORIZED', 'Email hoặc mật khẩu không chính xác.', 401);
       } else {
-        await userRepository.updateFailedAttempts(user.id, failedAttempts, null);
         throw new AppError(
           'UNAUTHORIZED',
-          `Email hoặc mật khẩu không chính xác. Số lần còn lại: ${5 - failedAttempts}.`,
+          'Email hoặc mật khẩu không chính xác.',
           401
         );
       }
@@ -119,21 +106,7 @@ class AuthService {
     }
 
     // Tạo token JWT
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      JWT_SECRET,
-      { expiresIn: JWT_EXPIRES_IN }
-    );
-
-    return {
-      user: {
-        id: user.id,
-        email: user.email,
-        fullName: user.full_name,
-        role: user.role
-      },
-      token
-    };
+    return this.issueSession(user);
   }
 
   /**

@@ -4,7 +4,7 @@ class RoomRepository {
   /**
    * Lấy danh sách phòng với phân trang và lọc (Tích hợp luôn Hạng mục 6)
    */
-  async findAll({ status, limit, offset }) {
+  async findAll({ status, q, roomTypeId, sortBy, sortOrder, limit, offset }) {
     let sql = `
       SELECT r.id, r.room_number, r.floor, r.status, r.created_at,
              rt.name as room_type_name, rt.base_price_per_night, rt.max_occupancy
@@ -13,12 +13,23 @@ class RoomRepository {
     `;
     const params = [];
     
+    const conditions = [];
     if (status) {
       params.push(status);
-      sql += ` WHERE r.status = $${params.length} `;
+      conditions.push(`r.status = $${params.length}`);
     }
+    if (roomTypeId) {
+      params.push(roomTypeId);
+      conditions.push(`r.room_type_id = $${params.length}`);
+    }
+    if (q) {
+      params.push(`%${q}%`);
+      conditions.push(`(r.room_number ILIKE $${params.length} OR rt.name ILIKE $${params.length})`);
+    }
+    if (conditions.length) sql += ` WHERE ${conditions.join(' AND ')} `;
 
-    sql += ` ORDER BY r.room_number ASC `;
+    const sortable = { room_number: 'r.room_number', floor: 'r.floor', created_at: 'r.created_at' };
+    sql += ` ORDER BY ${sortable[sortBy]} ${sortOrder}, r.id ${sortOrder} `;
 
     if (limit) {
       params.push(limit);
@@ -32,13 +43,8 @@ class RoomRepository {
     const result = await db.query(sql, params);
     
     // Count total for pagination
-    let countSql = `SELECT COUNT(*) FROM rooms`;
-    const countParams = [];
-    if (status) {
-      countParams.push(status);
-      countSql += ` WHERE status = $1`;
-    }
-    const countResult = await db.query(countSql, countParams);
+    const countSql = `SELECT COUNT(*) FROM rooms r LEFT JOIN room_types rt ON rt.id = r.room_type_id${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`;
+    const countResult = await db.query(countSql, params.slice(0, conditions.length));
 
     return {
       data: result.rows,

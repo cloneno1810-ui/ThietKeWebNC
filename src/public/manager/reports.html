@@ -1,59 +1,17 @@
 <!DOCTYPE html>
-<html lang="vi">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Báo cáo</title>
-  <link rel="stylesheet" href="/shared/layout.css">
-  <script src="/shared/auth-guard.js"></script>
-  <script src="/shared/api.js"></script>
-  <script src="/shared/ui-wrapper.js"></script>
-</head>
+<html lang="vi"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Báo cáo</title><link rel="stylesheet" href="/shared/layout.css"><script src="/shared/auth-guard.js"></script><script src="/shared/api.js"></script><script src="/shared/ui-wrapper.js"></script></head>
 <body>
-  <div class="toolbar">
-    <div>
-      <div class="page-h2">Báo cáo doanh thu</div>
-      <p class="muted">Dành cho quản lý và quản trị viên</p>
-    </div>
-  </div>
-  <div class="stats-row" id="rp-stats">
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-calendar-check"></i></div>
-      <div class="stat-info"><p>Tổng đơn</p><h3 id="rp-total">0</h3></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#dcfce7;color:#166534"><i class="fa-solid fa-money-bill-wave"></i></div>
-      <div class="stat-info"><p>Doanh thu dự kiến</p><h3 id="rp-rev">0 đ</h3></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-key"></i></div>
-      <div class="stat-info"><p>Đơn hoàn tất</p><h3 id="rp-done">0</h3></div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fa-solid fa-user-shield"></i></div>
-      <div class="stat-info"><p>Người xem</p><h3 id="rp-user">-</h3></div>
-    </div>
-  </div>
-  <div class="panel-card">
-    <p class="muted" id="rp-desc">Đang tải báo cáo...</p>
-  </div>
-
+  <div class="toolbar"><div><div class="page-h2">Báo cáo khách sạn</div><p class="muted">Ba báo cáo tổng hợp theo khoảng thời gian</p></div><div class="report-actions"><input id="date-from" type="date" aria-label="Từ ngày"><input id="date-to" type="date" aria-label="Đến ngày"><button class="btn btn-primary" id="btn-filter">Xem báo cáo</button><button class="btn btn-ghost" id="btn-export"><i class="fa-solid fa-file-csv"></i> Xuất CSV</button></div></div>
+  <div class="stats-row"><div class="stat-card"><div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-calendar-check"></i></div><div class="stat-info"><p>Tổng đơn</p><h3 id="rp-total">0</h3></div></div><div class="stat-card"><div class="stat-icon" style="background:#dcfce7;color:#166534"><i class="fa-solid fa-money-bill-wave"></i></div><div class="stat-info"><p>Doanh thu</p><h3 id="rp-rev">0 đ</h3></div></div><div class="stat-card"><div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-door-open"></i></div><div class="stat-info"><p>Phòng đang dùng</p><h3 id="rp-occupied">0</h3></div></div><div class="stat-card"><div class="stat-icon" style="background:#dbeafe;color:#1d4ed8"><i class="fa-solid fa-chart-line"></i></div><div class="stat-info"><p>Khoảng báo cáo</p><h3 id="rp-range">-</h3></div></div></div>
+  <div class="report-grid"><section class="panel-card"><h3>Doanh thu theo trạng thái</h3><div id="status-chart" class="bar-chart"></div></section><section class="panel-card"><h3>Đơn đặt theo ngày</h3><div id="daily-chart" class="bar-chart"></div></section><section class="panel-card"><h3>Công suất theo hạng phòng</h3><div id="occupancy-chart" class="bar-chart"></div></section></div>
+  <section class="panel-card upload-panel"><h3>Tải tệp an toàn</h3><p class="muted">Chỉ nhận PNG, JPEG hoặc PDF thật; dung lượng tối đa 5 MB.</p><div class="upload-row"><input id="safe-file" type="file" accept="image/png,image/jpeg,application/pdf"><button id="btn-upload" class="btn btn-primary">Tải tệp</button><span id="upload-result" class="muted"></span></div></section>
   <script>
-    document.addEventListener('DOMContentLoaded', () => setTimeout(async () => {
-      const res = await API.request('/api/v1/reports/revenue');
-      if (res.status !== 200) {
-        showToast('Không tải được báo cáo', res.data.error && res.data.error.message);
-        document.getElementById('rp-desc').textContent = 'Bạn không có quyền xem báo cáo này.';
-        return;
-      }
-      const d = res.data.data;
-      const r = d.report || {};
-      document.getElementById('rp-total').textContent = r.total_bookings || 0;
-      document.getElementById('rp-rev').textContent = Number(r.expected_revenue || 0).toLocaleString('vi-VN') + ' đ';
-      document.getElementById('rp-done').textContent = r.completed_bookings || 0;
-      document.getElementById('rp-user').textContent = d.user || '-';
-      document.getElementById('rp-desc').textContent = d.description || '';
-    }, 50));
+    let query = '';
+    const money = (n) => Number(n || 0).toLocaleString('vi-VN') + ' đ';
+    const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;', "'":'&#39;' }[c]));
+    function renderBars(id, rows, label, value, suffix = '') { const target = document.getElementById(id); const max = Math.max(1, ...rows.map(value)); target.innerHTML = rows.map((row) => '<div class="bar-row"><span>' + escapeHtml(label(row)) + '</span><div class="bar-track"><i style="width:' + Math.max(3, Math.round(value(row) * 100 / max)) + '%"></i></div><strong>' + value(row) + suffix + '</strong></div>').join('') || '<p class="muted">Không có dữ liệu trong khoảng thời gian này.</p>'; }
+    async function loadReports() { const res = await API.request('/api/v1/reports' + query); if (res.status !== 200) { showToast('Không tải được báo cáo', res.data.error && res.data.error.message); return; } const d = res.data.data; const revenue = d.revenueByStatus || []; const days = d.bookingsByDay || []; const occupancy = d.occupancyByRoomType || []; document.getElementById('rp-total').textContent = revenue.reduce((n, r) => n + Number(r.booking_count), 0); document.getElementById('rp-rev').textContent = money(revenue.reduce((n, r) => n + Number(r.revenue), 0)); document.getElementById('rp-occupied').textContent = occupancy.reduce((n, r) => n + Number(r.occupied_rooms), 0); document.getElementById('rp-range').textContent = d.range.from + ' - ' + d.range.to; renderBars('status-chart', revenue, r => r.status, r => Number(r.revenue), ' đ'); renderBars('daily-chart', days, r => String(r.report_date).slice(0, 10), r => Number(r.booking_count), ' đơn'); renderBars('occupancy-chart', occupancy, r => r.name, r => Number(r.occupied_rooms), ' phòng'); }
+    async function uploadFile() { try { const file = document.getElementById('safe-file').files[0]; if (!file) { showToast('Chưa chọn tệp'); return; } const form = new FormData(); form.append('file', file); const response = await fetch('/api/v1/uploads', { method: 'POST', headers: await API.csrfHeaders(), body: form, credentials: 'same-origin' }); const data = await response.json().catch(() => ({})); if (!response.ok) { showToast('Tệp bị từ chối', data.error && data.error.message); return; } document.getElementById('upload-result').textContent = 'Đã lưu: ' + data.data.file.name; showToast('Tải tệp thành công', data.data.file.mimeType, true); } catch (_) { showToast('Không tải được tệp', 'Kiểm tra phiên đăng nhập và kết nối.'); } }
+    document.addEventListener('DOMContentLoaded', () => setTimeout(() => { const today = new Date().toISOString().slice(0, 10); const from = new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10); document.getElementById('date-from').value = from; document.getElementById('date-to').value = today; document.getElementById('btn-filter').onclick = () => { query = '?from=' + document.getElementById('date-from').value + '&to=' + document.getElementById('date-to').value; loadReports(); }; document.getElementById('btn-export').onclick = () => { window.location.href = '/api/v1/reports/export.csv' + query; }; document.getElementById('btn-upload').onclick = uploadFile; document.getElementById('btn-filter').click(); }, 40));
   </script>
-</body>
-</html>
+</body></html>

@@ -9,7 +9,9 @@ const { registerSchema, loginSchema } = require('../schemas/auth.schema');
 // Public endpoints (áp dụng Auth Rate Limiter và Validation)
 router.post('/register', authLimiter, validate(registerSchema), (req, res) => authController.register(req, res));
 router.post('/login', authLimiter, validate(loginSchema), (req, res) => authController.login(req, res));
-router.post('/logout', (req, res) => authController.logout(req, res));
+router.post('/logout', authenticate, (req, res) => authController.logout(req, res));
+router.get('/csrf', authenticate, (req, res) => res.json({ success: true,
+  data: { csrfToken: require('../config/security').csrfForToken(req.session.token) } }));
 
 // Authenticated endpoint
 router.get('/me', authenticate, (req, res) => authController.getMe(req, res));

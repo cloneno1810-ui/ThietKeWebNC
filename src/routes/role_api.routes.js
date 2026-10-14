@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/db');
+const reportService = require('../services/report.service');
+const userRepository = require('../repositories/user.repository');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { sendSuccess, sendError } = require('../utils/response');
+const { audit } = require('../middlewares/audit.middleware');
+const { validateId, reportQuery } = require('../middlewares/input.middleware');
 
 /**
  * 1. API ĐẶC QUYỀN ADMIN: GET /api/v1/audit-logs
@@ -43,6 +47,53 @@ router.get('/reports/revenue', authenticate, authorize('manager', 'admin'), asyn
       description: 'API Báo cáo Doanh thu Khách sạn (Đặc quyền Quản lý - Manager & Admin)',
       report: summary.rows[0]
     });
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+/** Ba báo cáo tổng hợp Buổi 07, có điều kiện thời gian. */
+router.get('/reports', authenticate, authorize('manager', 'admin'), reportQuery, async (req, res) => {
+  try {
+    const reports = await reportService.getAll(req.query);
+    return sendSuccess(res, reports, 200);
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+/** Xuất CSV dùng dấu ; để mở đúng trong phần mềm bảng tính với dữ liệu tiếng Việt. */
+router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), reportQuery, async (req, res) => {
+  try {
+    const reports = await reportService.getAll(req.query);
+    const escapeCsv = (value) => { const text = String(value ?? ''); return `"${(/^[\s]*[=+@\-]/.test(text) ? "'" : '') + text.replaceAll('"', '""')}"`; };
+    const rows = [['Báo cáo', 'Nhãn', 'Số lượng', 'Doanh thu']];
+    reports.revenueByStatus.forEach((r) => rows.push(['Doanh thu theo trạng thái', r.status, r.booking_count, r.revenue]));
+    reports.bookingsByDay.forEach((r) => rows.push(['Đơn theo ngày', String(r.report_date).slice(0, 10), r.booking_count, r.revenue]));
+    reports.occupancyByRoomType.forEach((r) => rows.push(['Công suất hạng phòng', r.name, `${r.occupied_rooms}/${r.total_rooms}`, '']));
+    const csv = `\uFEFF${rows.map((row) => row.map(escapeCsv).join(',')).join('\r\n')}`;
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader('Content-Disposition', 'attachment; filename="bao-cao-khach-san.csv"');
+    return res.status(200).send(csv);
+  } catch (err) {
+    return sendError(res, err);
+  }
+});
+
+router.patch('/users/:id/role', authenticate, authorize('admin'), validateId, audit({
+  action: 'USER_ROLE_CHANGED',
+  targetEntity: 'users',
+  getEntityId: (req) => Number(req.params.id),
+  getDetails: (req) => `Cập nhật vai trò thành ${req.body.role}`
+}), async (req, res) => {
+  try {
+    const allowedRoles = ['guest', 'receptionist', 'manager', 'admin'];
+    if (!allowedRoles.includes(req.body.role)) {
+      return sendError(res, new (require('../utils/response').AppError)('INVALID_INPUT', 'Vai trò không hợp lệ.', 400));
+    }
+    const user = await userRepository.updateRole(req.params.id, req.body.role);
+    if (!user) return sendError(res, new (require('../utils/response').AppError)('RESOURCE_NOT_FOUND', 'Không tìm thấy người dùng.', 404));
+    return sendSuccess(res, { user }, 200);
   } catch (err) {
     return sendError(res, err);
   }

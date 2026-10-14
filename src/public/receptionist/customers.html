@@ -36,12 +36,15 @@
     }
     function render(list) {
       document.getElementById('cus-body').innerHTML = list.map((c) =>
-        '<tr><td>' + c.full_name + '</td><td>' + c.email + '</td><td>' + (c.phone || '-') + '</td><td>' + (c.identity_card || '-') + '</td>' +
-        '<td><button type="button" class="btn-icon" title="Gọi khách" onclick="callCustomer(\'' + (c.phone || '') + '\')"><i class="fa-solid fa-phone"></i></button></td></tr>'
+        '<tr><td>' + Security.escapeHtml(c.full_name) + '</td><td>' + Security.escapeHtml(c.email) + '</td><td>' + Security.escapeHtml(c.phone || '-') + '</td><td>' + Security.escapeHtml(c.identity_card || '-') + '</td>' +
+        '<td><button type="button" class="btn-icon" title="Gọi khách" data-call-customer="' + Security.escapeHtml(c.phone || '') + '"><i class="fa-solid fa-phone"></i></button></td></tr>'
       ).join('') || '<tr><td colspan="5">Chưa có khách hàng.</td></tr>';
+      document.querySelectorAll('[data-call-customer]').forEach((button) => {
+        button.addEventListener('click', () => callCustomer(button.dataset.callCustomer));
+      });
     }
     function callCustomer(phone) {
-      if (!phone) { showToast('Không có số điện thoại'); return; }
+      if (!/^[0-9+ -]{7,20}$/.test(phone)) { showToast('Số điện thoại không hợp lệ'); return; }
       window.location.href = 'tel:' + phone;
     }
     window.addEventListener('app:search', (e) => {

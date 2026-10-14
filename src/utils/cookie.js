@@ -1,4 +1,4 @@
-const COOKIE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const COOKIE_MAX_AGE_MS = require('../config/security').accessTtl * 1000;
 
 function tokenCookieOptions() {
   return {
