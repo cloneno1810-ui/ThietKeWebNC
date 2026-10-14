@@ -2,6 +2,53 @@ const bookingRepository = require('../repositories/booking.repository');
 const { AppError } = require('../utils/response');
 
 class BookingService {
+  validateBookingPayload(data) {
+    if (!data || typeof data !== 'object') {
+      throw new AppError('INVALID_INPUT', 'Dữ liệu đặt phòng không hợp lệ.', 400);
+    }
+
+    const requiredFields = ['room_type_id', 'check_in_date', 'check_out_date', 'num_guests'];
+    for (const field of requiredFields) {
+      if (data[field] === undefined || data[field] === null || data[field] === '') {
+        throw new AppError('INVALID_INPUT', `Vui lòng cung cấp ${field}.`, 400);
+      }
+    }
+
+    const roomTypeId = Number(data.room_type_id);
+    if (!Number.isInteger(roomTypeId) || roomTypeId <= 0) {
+      throw new AppError('INVALID_INPUT', 'Mã hạng phòng không hợp lệ.', 400);
+    }
+
+    const checkIn = new Date(data.check_in_date);
+    const checkOut = new Date(data.check_out_date);
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
+      throw new AppError('INVALID_INPUT', 'Ngày nhận phòng hoặc ngày trả phòng không hợp lệ.', 400);
+    }
+
+    if (checkOut <= checkIn) {
+      throw new AppError('INVALID_INPUT', 'Ngày trả phòng phải sau ngày nhận phòng.', 400);
+    }
+
+    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
+    if (nights <= 0) {
+      throw new AppError('INVALID_INPUT', 'Thời gian đặt phòng phải tối thiểu 1 ngày.', 400);
+    }
+
+    const guestCount = Number(data.num_guests);
+    if (!Number.isInteger(guestCount) || guestCount < 1) {
+      throw new AppError('INVALID_INPUT', 'Số khách phải là số nguyên dương.', 400);
+    }
+
+    if (data.total_price !== undefined && data.total_price !== null) {
+      const totalPrice = Number(data.total_price);
+      if (Number.isNaN(totalPrice) || totalPrice < 0) {
+        throw new AppError('INVALID_INPUT', 'Tổng tiền không hợp lệ.', 400);
+      }
+    }
+
+    return { roomTypeId, nights, guestCount };
+  }
+
   /**
    * Lấy chi tiết đơn đặt phòng với KIỂM SOÁT QUYỀN TRÊN ĐỐI TƯỢNG (Chống IDOR - BM4)
    * 
@@ -80,32 +127,43 @@ class BookingService {
   }
 
   async createBooking(data, currentUser) {
-    // Generate unique booking code
-    data.booking_code = 'BK' + Date.now().toString().slice(-8);
-    // Bind to user if logged in as guest
-    if (currentUser.role === 'guest') {
-      data.user_id = currentUser.id;
-      if(!data.guest_name) data.guest_name = currentUser.fullName;
-      if(!data.guest_email) data.guest_email = currentUser.email;
-      
-      const authService = require('../services/auth.service');
-      const user = await authService.getMe(currentUser.id);
-      if(!data.guest_phone) data.guest_phone = user.phone;
-    }
-    
-    // Check if room type exists and is available
+    const { roomTypeId, nights, guestCount } = this.validateBookingPayload(data);
+
     const roomTypeRepository = require('../repositories/roomType.repository');
-    const roomType = await roomTypeRepository.findById(data.room_type_id);
+    const roomType = await roomTypeRepository.findById(roomTypeId);
     if (!roomType) {
       throw new AppError('RESOURCE_NOT_FOUND', 'Hạng phòng không tồn tại.', 404);
     }
-    
-    // Simple mock logic: if total price isn't provided, calculate basic price
-    if (!data.total_price) {
-      const days = (new Date(data.check_out_date) - new Date(data.check_in_date)) / (1000 * 60 * 60 * 24);
-      data.total_price = roomType.base_price_per_night * (days > 0 ? days : 1);
+
+    if (guestCount > Number(roomType.max_occupancy)) {
+      throw new AppError(
+        'INVALID_INPUT',
+        `Số khách vượt quá sức chứa tối đa của hạng phòng (${roomType.max_occupancy} người).`,
+        400
+      );
     }
-    
+
+    // Generate unique booking code
+    data.booking_code = 'BK' + Date.now().toString().slice(-8);
+
+    // Bind to user if logged in as guest
+    if (currentUser.role === 'guest') {
+      data.user_id = currentUser.id;
+      if (!data.guest_name) data.guest_name = currentUser.fullName;
+      if (!data.guest_email) data.guest_email = currentUser.email;
+
+      const authService = require('../services/auth.service');
+      const user = await authService.getMe(currentUser.id);
+      if (!data.guest_phone) data.guest_phone = user.phone;
+    }
+
+    data.room_type_id = roomTypeId;
+    data.num_guests = guestCount;
+
+    if (data.total_price === undefined || data.total_price === null || Number(data.total_price) <= 0) {
+      data.total_price = Number(roomType.base_price_per_night) * nights;
+    }
+
     return await bookingRepository.create(data);
   }
 
