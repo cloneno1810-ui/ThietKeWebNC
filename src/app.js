@@ -2,7 +2,6 @@ const express = require('express');
 const path = require('path');
 const cors = require('cors');
 const helmet = require('helmet');
-const crypto = require('crypto');
 const cookieParser = require('cookie-parser');
 const healthRoutes = require('./routes/health.routes');
 const authRoutes = require('./routes/auth.routes');
@@ -13,11 +12,22 @@ const roleApiRoutes = require('./routes/role_api.routes');
 const fileRoutes = require('./routes/file.routes');
 const { sendError } = require('./utils/response');
 const { globalLimiter } = require('./middlewares/rateLimiter.middleware');
+const {
+  requestId,
+  httpsOnly,
+  originGuard,
+  contentTypeGuard,
+  csrfProtection
+} = require('./middlewares/security.middleware');
 
 const app = express();
 
 // Bat buoc khi chay sau proxy tren Render / Cloud (Moi truong san pham - Muc 7.6)
 app.set('trust proxy', 1);
+
+app.use(requestId);
+app.use(httpsOnly);
+app.use(originGuard);
 
 // Áp dụng giới hạn rate limit toàn cục cho tất cả các route API
 app.use('/api/', globalLimiter);
@@ -43,13 +53,8 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
-// Gan requestId cho moi request de de dang truy vet loi (BM9)
-app.use((req, res, next) => {
-  req.id = crypto.randomUUID();
-  res.setHeader('X-Request-Id', req.id);
-  next();
-});
+app.use(contentTypeGuard);
+app.use(csrfProtection);
 
 // Phuc vu trang tinh (Landing Page - Buoi 01)
 app.use(express.static(path.join(__dirname, 'public')));
