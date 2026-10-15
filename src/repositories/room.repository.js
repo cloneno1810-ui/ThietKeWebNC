@@ -4,69 +4,47 @@ class RoomRepository {
   /**
    * Lấy danh sách phòng với phân trang và lọc (Tích hợp luôn Hạng mục 6)
    */
-  async findAll({ status, q = '', roomTypeId = null, sortBy = 'room_number', sortOrder = 'ASC', limit, offset }) {
-    const validSortFields = {
-      room_number: 'r.room_number',
-      floor: 'r.floor',
-      created_at: 'r.created_at'
-    };
-    const sortColumn = validSortFields[sortBy] || 'r.room_number';
-    const orderDirection = sortOrder === 'DESC' ? 'DESC' : 'ASC';
-
-    const whereClauses = [];
-    const params = [];
-
-    if (status) {
-      params.push(status);
-      whereClauses.push(`r.status = $${params.length}`);
-    }
-
-    if (roomTypeId) {
-      params.push(roomTypeId);
-      whereClauses.push(`r.room_type_id = $${params.length}`);
-    }
-
-    if (q) {
-      params.push(`%${q}%`);
-      whereClauses.push(`(r.room_number ILIKE $${params.length} OR rt.name ILIKE $${params.length})`);
-    }
-
+  async findAll({ status, q, roomTypeId, sortBy, sortOrder, limit, offset }) {
     let sql = `
       SELECT r.id, r.room_number, r.floor, r.status, r.created_at,
              rt.name as room_type_name, rt.base_price_per_night, rt.max_occupancy
       FROM rooms r
       LEFT JOIN room_types rt ON r.room_type_id = rt.id
     `;
-    if (whereClauses.length) {
-      sql += ` WHERE ${whereClauses.join(' AND ')}`;
+    const params = [];
+    
+    const conditions = [];
+    if (status) {
+      params.push(status);
+      conditions.push(`r.status = $${params.length}`);
     }
+    if (roomTypeId) {
+      params.push(roomTypeId);
+      conditions.push(`r.room_type_id = $${params.length}`);
+    }
+    if (q) {
+      params.push(`%${q}%`);
+      conditions.push(`(r.room_number ILIKE $${params.length} OR rt.name ILIKE $${params.length})`);
+    }
+    if (conditions.length) sql += ` WHERE ${conditions.join(' AND ')} `;
 
-    sql += ` ORDER BY ${sortColumn} ${orderDirection}`;
+    const sortable = { room_number: 'r.room_number', floor: 'r.floor', created_at: 'r.created_at' };
+    sql += ` ORDER BY ${sortable[sortBy]} ${sortOrder}, r.id ${sortOrder} `;
 
     if (limit) {
       params.push(limit);
-      sql += ` LIMIT $${params.length}`;
+      sql += ` LIMIT $${params.length} `;
     }
     if (offset) {
       params.push(offset);
-      sql += ` OFFSET $${params.length}`;
+      sql += ` OFFSET $${params.length} `;
     }
 
     const result = await db.query(sql, params);
     
-    let countSql = `
-      SELECT COUNT(*) as count
-      FROM rooms r
-      LEFT JOIN room_types rt ON r.room_type_id = rt.id
-    `;
-    const countParams = [];
-    if (whereClauses.length) {
-      const countClauses = [...whereClauses];
-      countSql += ` WHERE ${countClauses.join(' AND ')}`;
-      const values = params.slice();
-      countParams.push(...values);
-    }
-    const countResult = await db.query(countSql, countParams);
+    // Count total for pagination
+    const countSql = `SELECT COUNT(*) FROM rooms r LEFT JOIN room_types rt ON rt.id = r.room_type_id${conditions.length ? ` WHERE ${conditions.join(' AND ')}` : ''}`;
+    const countResult = await db.query(countSql, params.slice(0, conditions.length));
 
     return {
       data: result.rows,

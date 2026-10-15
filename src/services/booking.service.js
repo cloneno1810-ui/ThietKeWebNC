@@ -1,54 +1,8 @@
 const bookingRepository = require('../repositories/booking.repository');
 const { AppError } = require('../utils/response');
+const crypto = require('crypto');
 
 class BookingService {
-  validateBookingPayload(data) {
-    if (!data || typeof data !== 'object') {
-      throw new AppError('INVALID_INPUT', 'Dữ liệu đặt phòng không hợp lệ.', 400);
-    }
-
-    const requiredFields = ['room_type_id', 'check_in_date', 'check_out_date', 'num_guests'];
-    for (const field of requiredFields) {
-      if (data[field] === undefined || data[field] === null || data[field] === '') {
-        throw new AppError('INVALID_INPUT', `Vui lòng cung cấp ${field}.`, 400);
-      }
-    }
-
-    const roomTypeId = Number(data.room_type_id);
-    if (!Number.isInteger(roomTypeId) || roomTypeId <= 0) {
-      throw new AppError('INVALID_INPUT', 'Mã hạng phòng không hợp lệ.', 400);
-    }
-
-    const checkIn = new Date(data.check_in_date);
-    const checkOut = new Date(data.check_out_date);
-    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime())) {
-      throw new AppError('INVALID_INPUT', 'Ngày nhận phòng hoặc ngày trả phòng không hợp lệ.', 400);
-    }
-
-    if (checkOut <= checkIn) {
-      throw new AppError('INVALID_INPUT', 'Ngày trả phòng phải sau ngày nhận phòng.', 400);
-    }
-
-    const nights = Math.ceil((checkOut - checkIn) / (1000 * 60 * 60 * 24));
-    if (nights <= 0) {
-      throw new AppError('INVALID_INPUT', 'Thời gian đặt phòng phải tối thiểu 1 ngày.', 400);
-    }
-
-    const guestCount = Number(data.num_guests);
-    if (!Number.isInteger(guestCount) || guestCount < 1) {
-      throw new AppError('INVALID_INPUT', 'Số khách phải là số nguyên dương.', 400);
-    }
-
-    if (data.total_price !== undefined && data.total_price !== null) {
-      const totalPrice = Number(data.total_price);
-      if (Number.isNaN(totalPrice) || totalPrice < 0) {
-        throw new AppError('INVALID_INPUT', 'Tổng tiền không hợp lệ.', 400);
-      }
-    }
-
-    return { roomTypeId, nights, guestCount };
-  }
-
   /**
    * Lấy chi tiết đơn đặt phòng với KIỂM SOÁT QUYỀN TRÊN ĐỐI TƯỢNG (Chống IDOR - BM4)
    * 
@@ -58,6 +12,7 @@ class BookingService {
    * - Nếu truy cập chéo sang booking của người khác -> Bị từ chối với mã 403 FORBIDDEN.
    */
   async getBookingDetail(bookingId, currentUser) {
+    await bookingRepository.expireHolds();
     const booking = await bookingRepository.findById(bookingId);
     if (!booking) {
       throw new AppError('RESOURCE_NOT_FOUND', `Không tìm thấy đơn đặt phòng với ID ${bookingId}.`, 404);
@@ -83,6 +38,7 @@ class BookingService {
    * Lấy danh sách đơn đặt phòng theo vai trò
    */
   async getBookings(currentUser) {
+    await bookingRepository.expireHolds();
     const isStaff = ['admin', 'manager', 'receptionist'].includes(currentUser.role);
 
     if (isStaff) {
@@ -98,6 +54,7 @@ class BookingService {
    * Guest chỉ được hủy đơn của chính mình. Truy cập chéo → 403 FORBIDDEN.
    */
   async cancelBooking(bookingId, currentUser) {
+    await bookingRepository.expireHolds();
     const booking = await bookingRepository.findById(bookingId);
     if (!booking) {
       throw new AppError('RESOURCE_NOT_FOUND', `Không tìm thấy đơn đặt phòng với ID ${bookingId}.`, 404);
@@ -115,56 +72,84 @@ class BookingService {
     }
 
     if (booking.status === 'cancelled') {
-      throw new AppError('INVALID_INPUT', 'Đơn đặt phòng này đã được hủy trước đó.', 400);
+      throw new AppError('INVALID_STATE', 'Đơn đặt phòng này đã được hủy trước đó.', 422);
     }
 
-    if (['checked_out', 'no_show'].includes(booking.status)) {
-      throw new AppError('INVALID_INPUT', `Không thể hủy đơn ở trạng thái ${booking.status}.`, 400);
+    if (!['pending_payment', 'confirmed'].includes(booking.status)) {
+      throw new AppError('INVALID_STATE', `Không thể hủy đơn ở trạng thái ${booking.status}.`, 422);
     }
 
-    const updated = await bookingRepository.updateStatus(booking.id, 'cancelled');
+    const updated = await bookingRepository.cancelActiveBooking(booking.id, currentUser.id, isStaff);
+    if (!updated) {
+      throw new AppError('INVALID_STATE', 'Trạng thái đơn đã thay đổi. Vui lòng tải lại danh sách.', 422);
+    }
     return updated;
   }
 
   async createBooking(data, currentUser) {
-    const { roomTypeId, nights, guestCount } = this.validateBookingPayload(data);
+    await bookingRepository.expireHolds();
 
-    const roomTypeRepository = require('../repositories/roomType.repository');
-    const roomType = await roomTypeRepository.findById(roomTypeId);
-    if (!roomType) {
-      throw new AppError('RESOURCE_NOT_FOUND', 'Hạng phòng không tồn tại.', 404);
+    if (!data.room_type_id || !data.check_in_date || !data.check_out_date || !data.num_guests) {
+      throw new AppError('INVALID_INPUT', 'Cần có room_type_id, ngày nhận, ngày trả và số khách.', 400);
     }
 
-    if (guestCount > Number(roomType.max_occupancy)) {
-      throw new AppError(
-        'INVALID_INPUT',
-        `Số khách vượt quá sức chứa tối đa của hạng phòng (${roomType.max_occupancy} người).`,
-        400
-      );
+    const checkIn = new Date(`${data.check_in_date}T00:00:00Z`);
+    const checkOut = new Date(`${data.check_out_date}T00:00:00Z`);
+    if (Number.isNaN(checkIn.getTime()) || Number.isNaN(checkOut.getTime()) || checkOut <= checkIn) {
+      throw new AppError('INVALID_INPUT', 'Ngày trả phòng phải sau ngày nhận phòng.', 400);
     }
 
-    // Generate unique booking code
-    data.booking_code = 'BK' + Date.now().toString().slice(-8);
-
+    // Mã có phần ngẫu nhiên để 50 request song song không đụng UNIQUE booking_code.
+    data.booking_code = `BK${Date.now().toString().slice(-8)}${crypto.randomBytes(3).toString('hex').toUpperCase()}`;
     // Bind to user if logged in as guest
     if (currentUser.role === 'guest') {
       data.user_id = currentUser.id;
-      if (!data.guest_name) data.guest_name = currentUser.fullName;
-      if (!data.guest_email) data.guest_email = currentUser.email;
-
+      if(!data.guest_name) data.guest_name = currentUser.fullName;
+      if(!data.guest_email) data.guest_email = currentUser.email;
+      
       const authService = require('../services/auth.service');
       const user = await authService.getMe(currentUser.id);
-      if (!data.guest_phone) data.guest_phone = user.phone;
+      if(!data.guest_phone) data.guest_phone = user.phone;
     }
-
-    data.room_type_id = roomTypeId;
-    data.num_guests = guestCount;
-
-    if (data.total_price === undefined || data.total_price === null || Number(data.total_price) <= 0) {
-      data.total_price = Number(roomType.base_price_per_night) * nights;
+    
+    // Check if room type exists and is available
+    const roomTypeRepository = require('../repositories/roomType.repository');
+    const roomType = await roomTypeRepository.findById(data.room_type_id);
+    if (!roomType) {
+      throw new AppError('RESOURCE_NOT_FOUND', 'Hạng phòng không tồn tại.', 404);
     }
+    
+    if (Number(data.num_guests) > Number(roomType.max_occupancy)) {
+      throw new AppError('INVALID_INPUT', 'Số khách vượt sức chứa của hạng phòng.', 400);
+    }
+    // Price is always calculated by the server, never trusted from a client.
+    {
+      const days = (new Date(data.check_out_date) - new Date(data.check_in_date)) / (1000 * 60 * 60 * 24);
+      data.total_price = roomType.base_price_per_night * (days > 0 ? days : 1);
+    }
+    
+    const holdMinutes = Number.parseInt(process.env.HOLD_DURATION_MINUTES || '30', 10);
+    try {
+      const booking = await bookingRepository.createHold(data, Number.isFinite(holdMinutes) && holdMinutes > 0 ? holdMinutes : 30);
+      if (!booking) {
+        throw new AppError('ROOM_UNAVAILABLE', 'Không còn phòng trống cho khoảng ngày đã chọn.', 409);
+      }
+      return booking;
+    } catch (error) {
+      if (bookingRepository.isExclusionViolation && bookingRepository.isExclusionViolation(error)) {
+        throw new AppError('ROOM_UNAVAILABLE', 'Phòng vừa được khách khác giữ chỗ. Vui lòng chọn khoảng ngày khác.', 409);
+      }
+      throw error;
+    }
+  }
 
-    return await bookingRepository.create(data);
+  async confirmBooking(bookingId, currentUser) {
+    await bookingRepository.expireHolds();
+    const booking = await this.getBookingDetail(bookingId, currentUser);
+    if (booking.status !== 'pending_payment') {
+      throw new AppError('INVALID_STATE', `Chỉ xác nhận được đơn đang chờ thanh toán. Trạng thái hiện tại: ${booking.status}.`, 422);
+    }
+    return bookingRepository.confirmHold(booking.id);
   }
 
   async checkInBooking(id, currentUser) {
@@ -176,8 +161,8 @@ class BookingService {
     const booking = await bookingRepository.findById(id);
     if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
     
-    if (booking.status !== 'confirmed' && booking.status !== 'pending_payment') {
-      throw new AppError('INVALID_STATE', `Không thể check-in phòng đang ở trạng thái ${booking.status}.`, 400);
+    if (booking.status !== 'confirmed') {
+      throw new AppError('INVALID_STATE', `Không thể check-in phòng đang ở trạng thái ${booking.status}.`, 422);
     }
     
     // Update booking status
@@ -202,7 +187,7 @@ class BookingService {
     if (!booking) throw new AppError('RESOURCE_NOT_FOUND', 'Đơn đặt phòng không tồn tại.', 404);
     
     if (booking.status !== 'checked_in') {
-      throw new AppError('INVALID_STATE', `Không thể check-out phòng chưa check-in. Trạng thái: ${booking.status}.`, 400);
+      throw new AppError('INVALID_STATE', `Không thể check-out phòng chưa check-in. Trạng thái: ${booking.status}.`, 422);
     }
     
     const updated = await bookingRepository.updateStatus(booking.id, 'checked_out');

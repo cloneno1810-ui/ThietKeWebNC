@@ -34,18 +34,21 @@
         maintenance: ['red', 'Bảo trì']
       };
       const v = map[st] || ['gray', st];
-      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
+      return '<span class="badge ' + v[0] + '">' + Security.escapeHtml(v[1]) + '</span>';
     }
     function render(list) {
       document.getElementById('rm-body').innerHTML = list.map((r) =>
-        '<tr><td>' + r.room_number + '</td><td>' + (r.room_type_name || '-') + '</td><td>' + badge(r.status) + '</td><td>' +
-        '<button type="button" class="btn btn-sm btn-warn" onclick="updateStatus(' + r.id + ', \'maintenance\')">Bảo trì</button> ' +
-        '<button type="button" class="btn btn-sm btn-success" onclick="updateStatus(' + r.id + ', \'available\')">Sẵn sàng</button>' +
+        '<tr><td>' + Security.escapeHtml(r.room_number) + '</td><td>' + Security.escapeHtml(r.room_type_name || '-') + '</td><td>' + badge(r.status) + '</td><td>' +
+        '<button type="button" class="btn btn-sm btn-warn" data-room-id="' + r.id + '" data-room-status="maintenance">Bảo trì</button> ' +
+        '<button type="button" class="btn btn-sm btn-success" data-room-id="' + r.id + '" data-room-status="available">Sẵn sàng</button>' +
         '</td></tr>'
       ).join('');
+      document.querySelectorAll('[data-room-id]').forEach((button) => {
+        button.addEventListener('click', () => updateStatus(button.dataset.roomId, button.dataset.roomStatus));
+      });
     }
     async function loadRooms() {
-      const res = await API.request('/api/v1/rooms?limit=100');
+      const res = await API.request('/api/v1/rooms?limit=50');
       if (res.status === 200) {
         rooms = res.data.data.rooms || [];
         render(rooms);

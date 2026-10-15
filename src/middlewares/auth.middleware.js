@@ -2,7 +2,8 @@ const jwt = require('jsonwebtoken');
 const { AppError, sendError } = require('../utils/response');
 const userRepository = require('../repositories/user.repository');
 
-const JWT_SECRET = process.env.JWT_SECRET || 'hotel_super_secret_jwt_key_2026';
+const security = require('../config/security');
+const sessions = require('../repositories/session.repository');
 
 /**
  * Middleware 1: Xác thực Token JWT (Authentication)
@@ -12,6 +13,9 @@ const authenticate = async (req, res, next) => {
   try {
     let token = null;
 
+    if (req.headers.authorization && !/^Bearer [^\s]+$/.test(req.headers.authorization)) {
+      return sendError(res, new AppError('UNAUTHORIZED', 'Tiêu đề xác thực không hợp lệ.', 401));
+    }
     if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
       token = req.headers.authorization.split(' ')[1];
     } else if (req.cookies && req.cookies.token) {
@@ -24,11 +28,18 @@ const authenticate = async (req, res, next) => {
 
     let decoded;
     try {
-      decoded = jwt.verify(token, JWT_SECRET);
+      decoded = jwt.verify(token, security.jwtSecret, {
+        algorithms: ['HS256'], issuer: security.jwtOptions.issuer, audience: security.jwtOptions.audience
+      });
     } catch (err) {
       return sendError(res, new AppError('UNAUTHORIZED', 'Token không hợp lệ hoặc đã hết hạn.', 401));
     }
 
+    if (!decoded.id || !/^[0-9a-f-]{36}$/i.test(decoded.jti || '') || !(await sessions.isActive(decoded.jti, decoded.id))) {
+      return sendError(res, new AppError('UNAUTHORIZED', 'Phiên đã kết thúc hoặc không hợp lệ. Vui lòng đăng nhập lại.', 401));
+    }
+    req.session = { id: decoded.jti, token };
+    res.setHeader('Cache-Control', 'no-store');
     const currentUser = await userRepository.findById(decoded.id);
     if (!currentUser) {
       return sendError(res, new AppError('UNAUTHORIZED', 'Người dùng thuộc token này không còn tồn tại.', 401));

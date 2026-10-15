@@ -3,92 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Đề tài 07 — Quản lý khách sạn và đặt phòng</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: Inter, sans-serif; background: #f4f7fb; color: #1e293b; min-height: 100vh; }
-    header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 20px 40px; max-width: 1120px; margin: 0 auto;
-    }
-    .logo { display: flex; align-items: center; gap: 10px; font-weight: 700; }
-    .logo span {
-      width: 40px; height: 40px; background: #3b82f6; color: #fff;
-      border-radius: 12px; display: flex; align-items: center; justify-content: center;
-    }
-    .nav-actions { display: flex; gap: 10px; }
-    .btn {
-      background: #3b82f6; color: #fff; text-decoration: none; border: none;
-      padding: 10px 18px; border-radius: 12px; font-weight: 600; font-size: 0.95rem;
-      cursor: pointer; font-family: inherit; display: inline-block;
-    }
-    .btn:hover { background: #2563eb; }
-    .btn.ghost { background: #fff; color: #334155; box-shadow: 0 8px 24px rgba(15,23,42,.04); }
-    .btn.ghost:hover { background: #f8fafc; }
-    main { max-width: 960px; margin: 48px auto; padding: 0 24px; }
-    h1 { font-size: 2.2rem; margin-bottom: 12px; letter-spacing: -0.03em; }
-    .lead { color: #64748b; max-width: 640px; margin-bottom: 28px; line-height: 1.7; }
-    .status-card {
-      background: #fff; border-radius: 20px; padding: 24px;
-      box-shadow: 0 10px 28px rgba(15,23,42,.05);
-    }
-    .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 16px; }
-    .label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: .04em; }
-    .val { font-weight: 600; margin-top: 4px; }
-    .val.green { color: #16a34a; }
-    .val.red { color: #ef4444; }
-    .actions { display: flex; gap: 12px; margin-top: 24px; flex-wrap: wrap; }
-    a.plain { color: #3b82f6; font-weight: 600; text-decoration: none; }
-  </style>
+  <meta name="description" content="Khám phá hạng phòng tại DT07 Hotel. Chọn ngày nghỉ, đặt phòng trực tuyến và quản lý kỳ nghỉ của bạn.">
+  <meta name="theme-color" content="#279f91">
+  <title>DT07 Hotel — Một khoảng nghỉ, nhiều trải nghiệm</title>
+  <link rel="preload" as="image" href="/assets/hotel/hero.jpg">
+  <link rel="stylesheet" href="/shared/hotel.css">
+  <script src="/shared/api.js" defer></script>
+  <script src="/shared/hotel.js" defer></script>
+  <script src="/shared/home.js" defer></script>
 </head>
-<body>
-  <header>
-    <div class="logo"><span>DT</span> DT07 Hotel</div>
-    <div class="nav-actions">
-      <a class="btn ghost" href="/login.html?register=1">Đăng ký</a>
-      <a class="btn" href="/login.html">Đăng nhập</a>
-    </div>
-  </header>
+<body class="hotel-page" data-hotel-page="home">
+  <header id="hotel-navigation"></header>
   <main>
-    <div style="color:#3b82f6;font-weight:700;font-size:12px;letter-spacing:.08em;margin-bottom:10px">ĐỀ TÀI 07 — CSE702051</div>
-    <h1>Hệ thống quản lý khách sạn và đặt phòng</h1>
-    <p class="lead">
-      Ứng dụng ba tầng: đăng ký, đăng nhập, đăng xuất; phân quyền hai mức (401 / 403);
-      chống truy cập chéo đơn đặt phòng; mật khẩu băm bcrypt và cookie phiên HttpOnly.
-    </p>
-    <div class="status-card">
-      <strong>Trạng thái hệ thống</strong>
-      <div class="status-grid">
-        <div><div class="label">Máy chủ</div><div class="val green" id="app-status">Node.js Express</div></div>
-        <div><div class="label">Triển khai</div><div class="val">Render Cloud</div></div>
-        <div><div class="label">Cơ sở dữ liệu</div><div class="val green" id="db-status">Đang kiểm tra...</div></div>
-        <div><div class="label">API</div><div class="val"><a class="plain" href="/api/v1/health">/api/v1/health</a></div></div>
+    <section class="hotel-hero" aria-label="Chào mừng đến DT07 Hotel">
+      <img id="hero-photo" class="hotel-hero-photo" src="/assets/hotel/hero.jpg" width="2000" height="1050" alt="Không gian xanh và hồ bơi trong khu nghỉ dưỡng — ảnh minh họa" fetchpriority="high">
+      <div class="hotel-hero-badge"><span></span>Chào mừng đến DT07 Hotel</div>
+      <div class="hotel-hero-caption"><p>STAY A LITTLE. FEEL AT HOME.</p><h1>Một khoảng nghỉ.<br>Nhiều trải nghiệm.</h1></div>
+      <div class="hotel-hero-thumbs" aria-label="Chọn hình ảnh khách sạn">
+        <button type="button" data-hero-photo="/assets/hotel/hero.jpg" data-photo-label="Không gian xanh và hồ bơi — ảnh minh họa" aria-label="Xem toàn cảnh" aria-pressed="true"><img src="/assets/hotel/hero.jpg" alt="" width="76" height="55"></button>
+        <button type="button" data-hero-photo="/assets/hotel/pool.jpg" data-photo-label="Hồ bơi ngoài trời — ảnh minh họa" aria-label="Xem hồ bơi" aria-pressed="false"><img src="/assets/hotel/pool.jpg" alt="" width="76" height="55"></button>
+        <button type="button" data-hero-photo="/assets/hotel/room-superior.jpg" data-photo-label="Phòng nghỉ sáng và thoáng — ảnh minh họa" aria-label="Xem phòng nghỉ" aria-pressed="false"><img src="/assets/hotel/room-superior.jpg" alt="" width="76" height="55"></button>
+        <button type="button" data-hero-photo="/assets/hotel/dining.jpg" data-photo-label="Không gian dùng bữa — ảnh minh họa" aria-label="Xem không gian dùng bữa" aria-pressed="false"><img src="/assets/hotel/dining.jpg" alt="" width="76" height="55"></button>
       </div>
-      <div class="actions">
-        <a class="btn" href="/login.html">Vào hệ thống</a>
-        <a class="btn ghost" href="/login.html?register=1">Tạo tài khoản khách</a>
-      </div>
+    </section>
+
+    <div class="hotel-container" id="booking">
+      <form class="hotel-booking-bar" id="home-booking-form">
+        <div class="hotel-booking-field"><label for="home-check-in">Ngày nhận phòng</label><input id="home-check-in" type="date" required></div>
+        <div class="hotel-booking-field"><label for="home-check-out">Ngày trả phòng</label><input id="home-check-out" type="date" required></div>
+        <div class="hotel-booking-field"><label for="home-guests">Số khách</label><select id="home-guests"><option value="1">1 khách</option><option value="2" selected>2 khách</option><option value="3">3 khách</option><option value="4">4 khách</option></select></div>
+        <button class="hotel-button yellow" type="submit">Tìm hạng phòng <span aria-hidden="true">→</span></button>
+      </form>
     </div>
+
+    <section class="hotel-section hotel-container hotel-intro" id="about">
+      <div><span class="hotel-eyebrow">CHÀO MỪNG BẠN</span><h2>DT07 Hotel.<br>Nơi kỳ nghỉ bắt đầu.</h2><p>Từ một chuyến đi ngắn ngày đến những khoảnh khắc nghỉ ngơi cùng người thân, hãy chọn một không gian phù hợp với bạn. Khám phá các hạng phòng, lên lịch lưu trú và quản lý đặt phòng trong một trải nghiệm đơn giản.</p><a class="hotel-text-link" href="#rooms">Khám phá hạng phòng <span aria-hidden="true">↗</span></a></div>
+      <div class="hotel-intro-benefits">
+        <div class="hotel-benefit"><span class="hotel-benefit-icon" data-icon="bed"></span><div><strong>Phòng cho từng chuyến đi</strong><small>Từ Standard đến Executive Suite</small></div></div>
+        <div class="hotel-benefit"><span class="hotel-benefit-icon" data-icon="calendar"></span><div><strong>Đặt phòng trực tuyến</strong><small>Chọn ngày và số khách theo nhu cầu</small></div></div>
+        <div class="hotel-benefit"><span class="hotel-benefit-icon" data-icon="shield"></span><div><strong>Kỳ nghỉ trong tầm tay</strong><small>Theo dõi và quản lý đơn của bạn</small></div></div>
+      </div>
+    </section>
+
+    <section class="hotel-section soft" id="rooms">
+      <div class="hotel-container">
+        <div class="hotel-section-heading"><div><span class="hotel-eyebrow">MỘT KHÔNG GIAN DÀNH CHO BẠN</span><h2>Các hạng phòng</h2><p>Tìm một căn phòng khiến bạn cảm thấy thoải mái như ở nhà.</p></div><a class="hotel-text-link" href="/guest/rooms.html">Xem tất cả hạng phòng ↗</a></div>
+        <div class="hotel-room-grid home-preview">
+          <article class="hotel-room-card"><div class="hotel-room-image"><img src="/assets/hotel/room-standard.jpg" width="1000" height="750" alt="Phòng ngủ tiêu chuẩn — ảnh minh họa" loading="lazy"><span class="hotel-room-label">Gọn gàng & thoải mái</span></div><div class="hotel-room-content"><h3>Standard Single</h3><p>Một không gian nghỉ ngơi nhẹ nhàng cho những chuyến đi ngắn ngày.</p><div class="hotel-room-meta"><span data-room-icon="bed">Phòng tiêu chuẩn</span></div><div class="hotel-room-bottom"><span class="hotel-room-price" style="font-size:12px">Chọn ngày lưu trú<small>Xem giá khi đặt phòng</small></span><button class="hotel-button outline" data-home-room="1" type="button">Xem phòng ↗</button></div></div></article>
+          <article class="hotel-room-card"><div class="hotel-room-image"><img src="/assets/hotel/room-superior.jpg" width="1000" height="750" alt="Phòng ngủ đôi — ảnh minh họa" loading="lazy"><span class="hotel-room-label">Thêm một chút thư thái</span></div><div class="hotel-room-content"><h3>Superior Double</h3><p>Không gian thoáng và ấm áp để tận hưởng những phút giây bên nhau.</p><div class="hotel-room-meta"><span data-room-icon="bed">Phòng đôi</span></div><div class="hotel-room-bottom"><span class="hotel-room-price" style="font-size:12px">Chọn ngày lưu trú<small>Xem giá khi đặt phòng</small></span><button class="hotel-button outline" data-home-room="2" type="button">Xem phòng ↗</button></div></div></article>
+          <article class="hotel-room-card"><div class="hotel-room-image"><img src="/assets/hotel/room-deluxe.jpg" width="1000" height="750" alt="Phòng ngủ Deluxe — ảnh minh họa" loading="lazy"><span class="hotel-room-label">Kỳ nghỉ đáng nhớ</span></div><div class="hotel-room-content"><h3>Deluxe Ocean View</h3><p>Lựa chọn dành cho một kỳ nghỉ dài hơn, với nhiều không gian để thư giãn.</p><div class="hotel-room-meta"><span data-room-icon="bed">Hạng phòng Deluxe</span></div><div class="hotel-room-bottom"><span class="hotel-room-price" style="font-size:12px">Chọn ngày lưu trú<small>Xem giá khi đặt phòng</small></span><button class="hotel-button outline" data-home-room="3" type="button">Xem phòng ↗</button></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="hotel-section hotel-container hotel-experience" id="amenities">
+      <img class="hotel-experience-photo" src="/assets/hotel/room-superior.jpg" width="1000" height="750" alt="Không gian phòng nghỉ sáng, thoáng — ảnh minh họa" loading="lazy">
+      <div><span class="hotel-eyebrow">NHỮNG ĐIỀU NHỎ, MỘT KỲ NGHỈ TRỌN VẸN</span><h2>Thoải mái từ<br>những điều giản đơn.</h2><p>Một chiếc giường êm, căn phòng sáng và những tiện nghi quen thuộc. Xem chi tiết từng hạng phòng để chọn không gian phù hợp với chuyến đi của bạn.</p><div class="hotel-features"><span><i data-icon="wifi"></i>Wi-Fi trong phòng</span><span><i data-icon="check"></i>Điều hòa</span><span><i data-icon="bed"></i>Nhiều hạng phòng</span><span><i data-icon="check"></i>Tiện nghi theo hạng</span></div><a class="hotel-button outline" href="/guest/rooms.html">Chọn phòng của bạn <span aria-hidden="true">→</span></a></div>
+    </section>
+
+    <section class="hotel-section soft" id="gallery"><div class="hotel-container"><div class="hotel-section-heading"><div><span class="hotel-eyebrow">CẢM HỨNG CHO CHUYẾN ĐI</span><h2>Một góc nhìn khác</h2><p>Những hình ảnh minh họa cho không gian nghỉ dưỡng.</p></div><span class="hotel-text-link">Bấm vào ảnh để xem thêm ↗</span></div><div class="hotel-gallery"><button type="button" data-gallery-photo="/assets/hotel/hero.jpg" aria-label="Xem ảnh toàn cảnh khu nghỉ dưỡng"><img src="/assets/hotel/hero.jpg" alt="Toàn cảnh khu nghỉ dưỡng — ảnh minh họa" width="2000" height="1050" loading="lazy"><span>Không gian xanh</span></button><button type="button" data-gallery-photo="/assets/hotel/room-superior.jpg" aria-label="Xem ảnh không gian phòng nghỉ"><img src="/assets/hotel/room-superior.jpg" alt="Phòng nghỉ — ảnh minh họa" width="1000" height="750" loading="lazy"><span>Phòng nghỉ</span></button><button type="button" data-gallery-photo="/assets/hotel/pool.jpg" aria-label="Xem ảnh hồ bơi"><img src="/assets/hotel/pool.jpg" alt="Hồ bơi — ảnh minh họa" width="1500" height="1000" loading="lazy"><span>Khoảnh khắc thư giãn</span></button></div></div></section>
+
+    <section class="hotel-section hotel-container hotel-help" id="help"><div><span class="hotel-eyebrow">TRƯỚC KHI BẠN ĐẶT PHÒNG</span><h2>Những điều<br>bạn có thể cần biết.</h2><p>Chuẩn bị một chút để kỳ nghỉ của bạn nhẹ nhàng hơn.</p><a class="hotel-text-link" href="/login.html?register=1">Tạo tài khoản khách ↗</a></div><div><details open><summary>Tôi đặt phòng như thế nào?</summary><p>Chọn ngày nhận, ngày trả và số khách. Đăng nhập tài khoản khách, chọn hạng phòng rồi xác nhận đặt. Tình trạng phòng được xác nhận khi đặt.</p></details><details><summary>Tôi xem đặt phòng của mình ở đâu?</summary><p>Sau khi đăng nhập, mở “Đơn của tôi” để xem ngày lưu trú, hạng phòng và trạng thái từng đơn.</p></details><details><summary>Tôi có thể hủy đơn không?</summary><p>Bạn có thể hủy đơn của mình khi đơn còn chờ thanh toán hoặc đã xác nhận và chưa nhận phòng. Mở “Đơn của tôi” và chọn “Hủy đơn”.</p></details><details><summary>Giá phòng được hiển thị ở đâu?</summary><p>Giá theo đêm được hiển thị tại trang chọn hạng phòng sau khi đăng nhập. Xem tổng tiền theo số đêm trước khi xác nhận đặt.</p></details></div></section>
   </main>
-  <script>
-    fetch('/api/v1/health')
-      .then(function (res) { return res.json(); })
-      .then(function (data) {
-        var el = document.getElementById('db-status');
-        if (data.database && data.database.status === 'CONNECTED') {
-          el.textContent = 'Neon PostgreSQL · ' + data.latencyMs + 'ms';
-        } else {
-          el.textContent = 'Lỗi kết nối CSDL';
-          el.className = 'val red';
-        }
-      })
-      .catch(function (err) {
-        document.getElementById('db-status').textContent = err.message;
-        document.getElementById('db-status').className = 'val red';
-      });
-  </script>
 </body>
 </html>

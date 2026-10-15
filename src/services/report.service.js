@@ -17,7 +17,7 @@ function getDateRange(query) {
 
 class ReportService {
   async getAll(query) {
-    const range = getDateRange(query || {});
+    const range = getDateRange(query);
     const [revenueByStatus, bookingsByDay, occupancyByRoomType] = await Promise.all([
       reportRepository.revenueByStatus(range),
       reportRepository.bookingsByDay(range),

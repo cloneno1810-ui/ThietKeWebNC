@@ -1,5 +1,6 @@
 require('dotenv').config();
 const app = require('./app');
+const bookingRepository = require('./repositories/booking.repository');
 
 const PORT = process.env.PORT || 8080;
 
@@ -12,3 +13,12 @@ app.listen(PORT, () => {
   console.log(`  Diem cuoi kiem tra: http://localhost:${PORT}/api/v1/health`);
   console.log('====================================================');
 });
+
+// Giải phóng lượt giữ chỗ định kỳ. Cùng logic này cũng chạy trước các request
+// đặt/xem đơn nên không phụ thuộc hoàn toàn vào timer khi Render ngủ dịch vụ.
+const holdSweepIntervalMs = 60 * 1000;
+setInterval(() => {
+  bookingRepository.expireHolds().catch((error) => {
+    console.error('[HOLD_EXPIRY] Không thể giải phóng giữ chỗ:', error.message);
+  });
+}, holdSweepIntervalMs).unref();

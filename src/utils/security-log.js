@@ -1,25 +1,6 @@
-const fs = require('fs');
-const path = require('path');
-
-const logsDirectory = path.resolve(__dirname, '../../storage');
-const logFilePath = path.join(logsDirectory, 'security-events.log');
-
-fs.mkdirSync(logsDirectory, { recursive: true });
-
-function logSecurityEvent(eventName, details = {}) {
-  const entry = {
-    timestamp: new Date().toISOString(),
-    event: eventName,
-    ...details
-  };
-
-  try {
-    fs.appendFileSync(logFilePath, `${JSON.stringify(entry)}\n`);
-  } catch (error) {
-    console.error('[SECURITY_LOG] Không ghi được nhật ký an ninh:', error.message);
-  }
-
-  console.warn(`[SECURITY] ${eventName}:`, JSON.stringify(entry));
-}
-
-module.exports = { logSecurityEvent };
+const audit = require('../repositories/audit.repository');
+module.exports = async function securityLog(req, action, userId = null) {
+  const entry = { userId, action, targetEntity: 'security', details: `requestId=${req.id}`, ipAddress: req.ip };
+  try { await audit.log(entry); }
+  catch (_) { console.error(JSON.stringify({ event: 'SECURITY_AUDIT_WRITE_FAILED', action, requestId: req.id })); }
+};

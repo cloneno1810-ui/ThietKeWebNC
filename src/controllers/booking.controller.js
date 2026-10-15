@@ -51,6 +51,15 @@ class BookingController {
     }
   }
 
+  async confirm(req, res) {
+    try {
+      const booking = await bookingService.confirmBooking(req.params.id, req.user);
+      return sendSuccess(res, { booking, message: 'Xác nhận giữ chỗ thành công.' }, 200);
+    } catch (err) {
+      return sendError(res, err);
+    }
+  }
+
   async checkIn(req, res) {
     try {
       const booking = await bookingService.checkInBooking(req.params.id, req.user);

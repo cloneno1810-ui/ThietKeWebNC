@@ -4,9 +4,9 @@ const db = require('../config/db');
 const reportService = require('../services/report.service');
 const userRepository = require('../repositories/user.repository');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
-const { sendSuccess, sendError, AppError } = require('../utils/response');
+const { sendSuccess, sendError } = require('../utils/response');
 const { audit } = require('../middlewares/audit.middleware');
-const { validateIdParam, validateReportQuery } = require('../middlewares/input.middleware');
+const { validateId, reportQuery } = require('../middlewares/input.middleware');
 
 /**
  * 1. API ĐẶC QUYỀN ADMIN: GET /api/v1/audit-logs
@@ -53,7 +53,7 @@ router.get('/reports/revenue', authenticate, authorize('manager', 'admin'), asyn
 });
 
 /** Ba báo cáo tổng hợp Buổi 07, có điều kiện thời gian. */
-router.get('/reports', authenticate, authorize('manager', 'admin'), validateReportQuery, async (req, res) => {
+router.get('/reports', authenticate, authorize('manager', 'admin'), reportQuery, async (req, res) => {
   try {
     const reports = await reportService.getAll(req.query);
     return sendSuccess(res, reports, 200);
@@ -63,10 +63,10 @@ router.get('/reports', authenticate, authorize('manager', 'admin'), validateRepo
 });
 
 /** Xuất CSV dùng dấu ; để mở đúng trong phần mềm bảng tính với dữ liệu tiếng Việt. */
-router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), validateReportQuery, async (req, res) => {
+router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), reportQuery, async (req, res) => {
   try {
     const reports = await reportService.getAll(req.query);
-    const escapeCsv = (value) => `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const escapeCsv = (value) => { const text = String(value ?? ''); return `"${(/^[\s]*[=+@\-]/.test(text) ? "'" : '') + text.replaceAll('"', '""')}"`; };
     const rows = [['Báo cáo', 'Nhãn', 'Số lượng', 'Doanh thu']];
     reports.revenueByStatus.forEach((r) => rows.push(['Doanh thu theo trạng thái', r.status, r.booking_count, r.revenue]));
     reports.bookingsByDay.forEach((r) => rows.push(['Đơn theo ngày', String(r.report_date).slice(0, 10), r.booking_count, r.revenue]));
@@ -80,7 +80,7 @@ router.get('/reports/export.csv', authenticate, authorize('manager', 'admin'), v
   }
 });
 
-router.patch('/users/:id/role', authenticate, authorize('admin'), validateIdParam('id'), audit({
+router.patch('/users/:id/role', authenticate, authorize('admin'), validateId, audit({
   action: 'USER_ROLE_CHANGED',
   targetEntity: 'users',
   getEntityId: (req) => Number(req.params.id),
@@ -89,10 +89,10 @@ router.patch('/users/:id/role', authenticate, authorize('admin'), validateIdPara
   try {
     const allowedRoles = ['guest', 'receptionist', 'manager', 'admin'];
     if (!allowedRoles.includes(req.body.role)) {
-      return sendError(res, new AppError('INVALID_INPUT', 'Vai trò không hợp lệ.', 400));
+      return sendError(res, new (require('../utils/response').AppError)('INVALID_INPUT', 'Vai trò không hợp lệ.', 400));
     }
     const user = await userRepository.updateRole(req.params.id, req.body.role);
-    if (!user) return sendError(res, new AppError('RESOURCE_NOT_FOUND', 'Không tìm thấy người dùng.', 404));
+    if (!user) return sendError(res, new (require('../utils/response').AppError)('RESOURCE_NOT_FOUND', 'Không tìm thấy người dùng.', 404));
     return sendSuccess(res, { user }, 200);
   } catch (err) {
     return sendError(res, err);

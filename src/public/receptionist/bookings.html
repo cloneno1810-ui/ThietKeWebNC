@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="stats-row">
-    <div class="stat-card">
+    <div class="stat-card stat-card-action" id="stat-total" role="button" tabindex="0" title="Xem tất cả đơn">
       <div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-calendar-check"></i></div>
       <div class="stat-info">
         <p>Tổng đơn đặt</p>
@@ -19,7 +19,7 @@
         <div class="stat-trend up" id="st-total-trend"></div>
       </div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card stat-card-action" id="stat-checkedin" role="button" tabindex="0" title="Lọc đơn đang ở">
       <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-key"></i></div>
       <div class="stat-info">
         <p>Đã check-in</p>
@@ -27,14 +27,14 @@
         <div class="stat-trend up" id="st-in-trend"></div>
       </div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card stat-card-action" id="stat-revenue" role="button" tabindex="0" title="Bỏ bộ lọc">
       <div class="stat-icon" style="background:#dcfce7;color:#166534"><i class="fa-solid fa-money-bill-wave"></i></div>
       <div class="stat-info">
         <p>Doanh thu dự kiến</p>
         <h3 id="st-revenue">0đ</h3>
       </div>
     </div>
-    <div class="stat-card">
+    <div class="stat-card stat-card-action" id="stat-cancelled" role="button" tabindex="0" title="Lọc đơn đã hủy">
       <div class="stat-icon" style="background:#fee2e2;color:#991b1b"><i class="fa-solid fa-ban"></i></div>
       <div class="stat-info">
         <p>Đơn đã hủy</p>
@@ -148,7 +148,7 @@
         cancelled: ['red', 'Đã hủy']
       };
       const v = map[status] || ['gray', status];
-      return '<span class="badge ' + v[0] + '">' + v[1] + '</span>';
+      return '<span class="badge ' + v[0] + '">' + Security.escapeHtml(v[1]) + '</span>';
     }
 
     function filtered() {
@@ -169,6 +169,8 @@
         renderList();
         if (selectedId) showDetail(selectedId);
         else if (allBookings.length) showDetail(allBookings[0].id);
+      } else {
+        showToast('Không tải được đơn đặt phòng', (res.data.error && res.data.error.message) || 'Vui lòng thử lại.');
       }
     }
 
@@ -190,22 +192,46 @@
     function renderList() {
       const list = filtered();
       const html = list.map((b) => {
-        return '<div class="booking-card' + (selectedId === b.id ? ' active' : '') + '" onclick="showDetail(' + b.id + ')" id="card-' + b.id + '">' +
-          '<div class="card-top"><div class="card-id">Mã đơn #' + b.booking_code + '</div>' + getBadge(b.status) + '</div>' +
-          '<div class="card-customer">' + b.guest_name + '</div>' +
+        return '<div class="booking-card' + (selectedId === b.id ? ' active' : '') + '" data-booking-id="' + b.id + '" id="card-' + b.id + '">' +
+          '<div class="card-top"><div class="card-id">Mã đơn #' + Security.escapeHtml(b.booking_code) + '</div>' + getBadge(b.status) + '</div>' +
+          '<div class="card-customer">' + Security.escapeHtml(b.guest_name) + '</div>' +
           '<div class="card-time">' + String(b.check_in_date).substring(0, 10) + ' → ' + String(b.check_out_date).substring(0, 10) + '</div>' +
-          '<div class="card-item"><span>1 × ' + (b.room_type_name || 'Phòng') + '</span><i class="fa-solid fa-chevron-down" style="color:#94a3b8"></i></div>' +
+          '<div class="card-item"><span>1 × ' + Security.escapeHtml(b.room_type_name || 'Phòng') + '</span><i class="fa-solid fa-chevron-down" style="color:#94a3b8"></i></div>' +
           '<div class="card-address"><i class="fa-solid fa-location-dot" style="color:#3b82f6"></i> ' +
-            (b.guest_email || 'Không có email') +
-            '<button type="button" class="btn-icon" title="Gọi khách" onclick="callGuest(event,\'' + (b.guest_phone || '') + '\')"><i class="fa-solid fa-phone"></i></button>' +
+            Security.escapeHtml(b.guest_email || 'Không có email') +
+            '<button type="button" class="btn-icon" title="Gọi khách" data-call-guest="' + Security.escapeHtml(b.guest_phone || '') + '"><i class="fa-solid fa-phone"></i></button>' +
           '</div></div>';
       }).join('');
       document.getElementById('booking-list').innerHTML = html || '<div class="empty-state">Không có đơn phù hợp.</div>';
     }
 
+    function bindStatCards() {
+      const actions = [
+        ['stat-total', ''],
+        ['stat-checkedin', 'checked_in'],
+        ['stat-revenue', ''],
+        ['stat-cancelled', 'cancelled']
+      ];
+      actions.forEach(([id, status]) => {
+        const card = document.getElementById(id);
+        if (!card) return;
+        const activate = () => {
+          statusFilter = status;
+          const filter = document.getElementById('status-filter');
+          if (filter) filter.value = status;
+          renderList();
+          document.getElementById('booking-list').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        };
+        card.addEventListener('click', activate);
+        card.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); activate(); }
+        });
+      });
+    }
+
     function callGuest(e, phone) {
       e.stopPropagation();
-      if (!phone) { showToast('Không có số điện thoại'); return; }
+      if (!/^[0-9+ -]{7,20}$/.test(phone)) { showToast('Số điện thoại không hợp lệ'); return; }
       window.location.href = 'tel:' + phone;
     }
 
@@ -247,9 +273,9 @@
         timeline += tlItem('fa-door-open', 'Check-in', isCheckIn ? 'Đã nhận phòng' : '-', isCheckIn);
         timeline += tlItem('fa-door-closed', 'Check-out', isCheckOut ? 'Đã trả phòng' : '-', isCheckOut);
         if (b.status === 'confirmed' || b.status === 'pending_payment') {
-          actionBtn = '<button type="button" class="action-btn btn-primary" onclick="doAction(' + b.id + ', \'check-in\')">Thực hiện Check-in</button>';
+          actionBtn = '<button type="button" class="action-btn btn-primary" data-booking-action="' + b.id + '" data-action="check-in">Thực hiện Check-in</button>';
         } else if (b.status === 'checked_in') {
-          actionBtn = '<button type="button" class="action-btn btn-primary" style="background:#10b981" onclick="doAction(' + b.id + ', \'check-out\')">Thực hiện Check-out</button>';
+          actionBtn = '<button type="button" class="action-btn btn-primary" style="background:#10b981" data-booking-action="' + b.id + '" data-action="check-out">Thực hiện Check-out</button>';
         }
       }
       document.getElementById('dt-timeline').innerHTML = timeline;
@@ -271,10 +297,12 @@
       const b = allBookings.find((x) => x.id === selectedId);
       if (!b) { showToast('Chọn một đơn trước'); return; }
       const w = window.open('', '_blank');
-      w.document.write('<html><head><title>Hóa đơn ' + b.booking_code + '</title></head><body style="font-family:Inter,sans-serif;padding:32px">' +
-        '<h2>DT07 Hotel — Hóa đơn</h2><p>Mã đơn: <strong>' + b.booking_code + '</strong></p>' +
-        '<p>Khách: ' + b.guest_name + ' · ' + (b.guest_phone || '') + '</p>' +
-        '<p>Hạng phòng: ' + (b.room_type_name || '') + ' · Phòng: ' + (b.room_number || 'Chưa xếp') + '</p>' +
+      if (!w) { showToast('Trình duyệt đang chặn cửa sổ in'); return; }
+      const safe = Object.fromEntries(Object.entries(b).map(([key, value]) => [key, Security.escapeHtml(value)]));
+      w.document.write('<html><head><title>Hóa đơn ' + safe.booking_code + '</title></head><body style="font-family:Inter,sans-serif;padding:32px">' +
+        '<h2>DT07 Hotel — Hóa đơn</h2><p>Mã đơn: <strong>' + safe.booking_code + '</strong></p>' +
+        '<p>Khách: ' + safe.guest_name + ' · ' + (safe.guest_phone || '') + '</p>' +
+        '<p>Hạng phòng: ' + (safe.room_type_name || '') + ' · Phòng: ' + (safe.room_number || 'Chưa xếp') + '</p>' +
         '<p>Nhận: ' + String(b.check_in_date).substring(0,10) + ' — Trả: ' + String(b.check_out_date).substring(0,10) + '</p>' +
         '<h3>Tổng: ' + formatMoney(b.total_price) + '</h3></body></html>');
       w.document.close();
@@ -284,6 +312,25 @@
     window.addEventListener('app:search', (e) => {
       searchText = e.detail || '';
       renderList();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const bookingList = document.getElementById('booking-list');
+      const actionContainer = document.getElementById('action-container');
+      bookingList.addEventListener('click', (e) => {
+        const phoneButton = e.target.closest('[data-call-guest]');
+        if (phoneButton) {
+          e.stopPropagation();
+          callGuest(e, phoneButton.dataset.callGuest);
+          return;
+        }
+        const card = e.target.closest('[data-booking-id]');
+        if (card) showDetail(Number(card.dataset.bookingId));
+      });
+      actionContainer.addEventListener('click', (e) => {
+        const button = e.target.closest('[data-booking-action]');
+        if (button) doAction(Number(button.dataset.bookingAction), button.dataset.action);
+      });
     });
 
     window.addEventListener('app:ready', loadData);
@@ -297,6 +344,7 @@
           renderList();
         });
         printBtn.addEventListener('click', printInvoice);
+        bindStatCards();
         loadData();
       }, 0);
     });

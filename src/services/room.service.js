@@ -43,35 +43,13 @@ class RoomService {
   }
 
   async createRoom(data) {
-    if (!data || typeof data !== 'object') {
-      throw new AppError('INVALID_INPUT', 'Dữ liệu phòng không hợp lệ.', 400);
-    }
-
-    const roomNumber = String(data.room_number ?? '').trim();
-    const floor = Number(data.floor);
-    const roomTypeId = Number(data.room_type_id);
-
-    if (!roomNumber) {
-      throw new AppError('INVALID_INPUT', 'Vui lòng nhập số phòng.', 400);
-    }
-    if (!Number.isInteger(roomTypeId) || roomTypeId <= 0) {
-      throw new AppError('INVALID_INPUT', 'Mã hạng phòng không hợp lệ.', 400);
-    }
-    if (!Number.isInteger(floor) || floor < 1) {
-      throw new AppError('INVALID_INPUT', 'Tầng phòng không hợp lệ.', 400);
-    }
-
-    const existing = await roomRepository.findByRoomNumber(roomNumber);
+    // Kiểm tra số phòng đã tồn tại chưa
+    const existing = await roomRepository.findByRoomNumber(data.room_number);
     if (existing) {
       throw new AppError('RESOURCE_EXISTS', 'Số phòng này đã tồn tại trong hệ thống.', 400);
     }
-
-    return await roomRepository.create({
-      room_number: roomNumber,
-      room_type_id: roomTypeId,
-      floor,
-      status: data.status || 'available'
-    });
+    
+    return await roomRepository.create(data);
   }
 
   async updateRoomStatus(id, status) {
