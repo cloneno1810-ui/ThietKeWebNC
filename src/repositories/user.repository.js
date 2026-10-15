@@ -41,29 +41,19 @@ class UserRepository {
       VALUES ($1, $2, $3, $4, $5, $6)
       RETURNING id, email, full_name, phone, identity_card, role, created_at;
     `;
-    const result = await db.query(sql, [
+    let result;
+    try { result = await db.query(sql, [
       email,
       passwordHash,
       fullName,
       phone || null,
       identityCard || null,
       role
-    ]);
+    ]); } catch (error) {
+      if (error.code === '23505') throw new (require('../utils/response').AppError)('INVALID_INPUT', 'Email này đã được sử dụng.', 400);
+      throw error;
+    }
     return result.rows[0];
-  }
-
-  /**
-   * Cập nhật vai trò người dùng
-   */
-  async updateRole(id, role) {
-    const sql = `
-      UPDATE users
-      SET role = $1, updated_at = CURRENT_TIMESTAMP
-      WHERE id = $2
-      RETURNING id, email, full_name, phone, identity_card, role, created_at, updated_at;
-    `;
-    const result = await db.query(sql, [role, id]);
-    return result.rows[0] || null;
   }
 
   /**
@@ -78,6 +68,16 @@ class UserRepository {
     await db.query(sql, [failedAttempts, lockedUntil, id]);
   }
 
+  async recordFailedLogin(id) {
+    const result = await db.query(`UPDATE users SET
+      failed_attempts = CASE WHEN locked_until <= CURRENT_TIMESTAMP THEN 1 ELSE failed_attempts + 1 END,
+      locked_until = CASE WHEN locked_until > CURRENT_TIMESTAMP THEN locked_until
+        WHEN (CASE WHEN locked_until <= CURRENT_TIMESTAMP THEN 1 ELSE failed_attempts + 1 END) >= 5
+        THEN CURRENT_TIMESTAMP + INTERVAL '15 minutes' ELSE NULL END,
+      updated_at = CURRENT_TIMESTAMP WHERE id = $1 RETURNING failed_attempts, locked_until`, [id]);
+    return result.rows[0];
+  }
+
   /**
    * Đặt lại số lần đăng nhập sai về 0
    */
@@ -88,6 +88,15 @@ class UserRepository {
       WHERE id = $1;
     `;
     await db.query(sql, [id]);
+  }
+
+  async updateRole(id, role) {
+    const result = await db.query(
+      `UPDATE users SET role = $2, updated_at = CURRENT_TIMESTAMP WHERE id = $1
+       RETURNING id, email, full_name, role;`,
+      [id, role]
+    );
+    return result.rows[0] || null;
   }
 }
 
