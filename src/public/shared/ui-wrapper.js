@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     guest: [{ name: 'Đặt phòng', icon: 'fa-bed', path: '/guest/rooms.html' }, { name: 'Đơn của tôi', icon: 'fa-file-invoice', path: '/guest/my-bookings.html' }],
     receptionist: [{ name: 'Dashboard', icon: 'fa-house', path: '/receptionist/bookings.html' }, { name: 'Khách hàng', icon: 'fa-user', path: '/receptionist/customers.html' }],
     manager: [{ name: 'Dashboard', icon: 'fa-house', path: '/receptionist/bookings.html' }, { name: 'Phòng', icon: 'fa-door-open', path: '/manager/rooms.html' }, { name: 'Hạng phòng', icon: 'fa-star', path: '/manager/room-types.html' }, { name: 'Báo cáo', icon: 'fa-chart-column', path: '/manager/reports.html' }],
-    admin: [{ name: 'Dashboard', icon: 'fa-house', path: '/receptionist/bookings.html' }, { name: 'Nhật ký', icon: 'fa-shield-halved', path: '/admin/audit-logs.html' }, { name: 'Báo cáo', icon: 'fa-chart-column', path: '/manager/reports.html' }]
+    admin: [{ name: 'Tài khoản nhân viên', icon: 'fa-users', path: '/admin/staff-accounts.html' }, { name: 'Dashboard', icon: 'fa-house', path: '/receptionist/bookings.html' }, { name: 'Nhật ký', icon: 'fa-shield-halved', path: '/admin/audit-logs.html' }, { name: 'Báo cáo', icon: 'fa-chart-column', path: '/manager/reports.html' }]
   };
   const menuHtml = (menus[role] || []).map((m) => {
     const active = currentPath === m.path || currentPath.endsWith(m.path);

@@ -64,6 +64,7 @@ app.use(cors({
 }));
 app.use('/api/', globalLimiter);
 app.use(express.json({ limit: '64kb' }));
+app.use(require('./routes/seo.routes'));
 
 // Gan requestId cho moi request de de dang truy vet loi (BM9)
 
@@ -90,6 +91,7 @@ app.use(express.static(publicDirectory, { index: false, dotfiles: 'deny' }));
 app.use('/api/v1', healthRoutes);
 app.use('/api/v1', roleApiRoutes);
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/staff-accounts', require('./routes/staffAccount.routes'));
 app.use('/api/v1/room-types', roomTypeRoutes);
 app.use('/api/v1/rooms', roomRoutes);
 app.use('/api/v1/bookings', bookingRoutes);

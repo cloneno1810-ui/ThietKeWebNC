@@ -2,6 +2,12 @@ const roomService = require('../services/room.service');
 const { sendSuccess, sendError } = require('../utils/response');
 
 class RoomController {
+  async getAvailable(req, res) {
+    try {
+      const rooms = await roomService.getAvailableRooms(req.query);
+      return sendSuccess(res, { rooms }, 200);
+    } catch (err) { return sendError(res, err); }
+  }
   async getAll(req, res) {
     try {
       const result = await roomService.getRooms(req.query);

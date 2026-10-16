@@ -3,7 +3,8 @@ const router = express.Router();
 const roomController = require('../controllers/room.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { audit } = require('../middlewares/audit.middleware');
-const { validateId, roomBody, roomsQuery } = require('../middlewares/input.middleware');
+const { validateId, roomBody, roomsQuery, availableRoomsQuery } = require('../middlewares/input.middleware');
+router.get('/available', authenticate, availableRoomsQuery, (req, res) => roomController.getAvailable(req, res));
 router.use('/:id', validateId);
 
 // Public/Guest có thể xem danh sách và chi tiết phòng

@@ -1,6 +1,11 @@
 const db = require('../config/db');
 
 class UserRepository {
+  async findStaff() {
+    const result = await db.query(`SELECT id, email, full_name, role, created_at FROM users
+      WHERE role IN ('receptionist', 'manager', 'admin') ORDER BY created_at DESC, id DESC LIMIT 100`);
+    return result.rows;
+  }
   /**
    * Tìm người dùng theo Email
    * Parameterized Query $1 chống SQL Injection

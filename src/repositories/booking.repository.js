@@ -100,7 +100,7 @@ class BookingRepository {
    */
   async createHold(data, holdMinutes) {
     const {
-      booking_code, user_id, room_type_id, guest_name, guest_phone,
+      booking_code, user_id, room_type_id, room_id, guest_name, guest_phone,
       guest_email, check_in_date, check_out_date, num_guests, total_price
     } = data;
 
@@ -109,6 +109,7 @@ class BookingRepository {
          SELECT r.id
          FROM rooms r
          WHERE r.room_type_id = $1
+           AND ($12::bigint IS NULL OR r.id = $12::bigint)
            AND r.status NOT IN ('maintenance', 'cleaning')
            AND NOT EXISTS (
              SELECT 1
@@ -132,7 +133,7 @@ class BookingRepository {
        RETURNING *;`,
       [
         room_type_id, check_in_date, check_out_date, booking_code, user_id || null,
-        guest_name, guest_phone, guest_email, num_guests, total_price, holdMinutes
+        guest_name, guest_phone, guest_email, num_guests, total_price, holdMinutes, room_id ?? null
       ]
     );
     return result.rows[0] || null;
@@ -146,6 +147,21 @@ class BookingRepository {
        RETURNING *;`,
       [id]
     );
+    return result.rows[0] || null;
+  }
+
+  async checkInConfirmed(id) {
+    const result = await db.query(`WITH ready_room AS (
+      SELECT r.id FROM rooms r JOIN bookings b ON b.room_id = r.id
+      WHERE b.id = $1 AND r.status IN ('available', 'booked') FOR UPDATE OF r
+    ), changed_booking AS (
+      UPDATE bookings SET status = 'checked_in', updated_at = CURRENT_TIMESTAMP
+      WHERE id = $1 AND status = 'confirmed' AND room_id IN (SELECT id FROM ready_room)
+      RETURNING *
+    ), changed_room AS (
+      UPDATE rooms SET status = 'occupied', updated_at = CURRENT_TIMESTAMP
+      WHERE id IN (SELECT room_id FROM changed_booking) RETURNING id
+    ) SELECT b.* FROM changed_booking b JOIN changed_room r ON r.id = b.room_id`, [id]);
     return result.rows[0] || null;
   }
 

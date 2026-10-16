@@ -3,6 +3,7 @@ const router = express.Router();
 const bookingController = require('../controllers/booking.controller');
 const { authenticate, authorize } = require('../middlewares/auth.middleware');
 const { validateId, bookingBody } = require('../middlewares/input.middleware');
+const { audit } = require('../middlewares/audit.middleware');
 router.use('/:id', validateId);
 
 /**
@@ -32,12 +33,17 @@ router.post('/', authenticate, bookingBody, (req, res) => bookingController.crea
  * POST /api/v1/bookings/:id/confirm
  * Mô phỏng hoàn tất thanh toán: pending_payment -> confirmed.
  */
-router.post('/:id/confirm', authenticate, (req, res) => bookingController.confirm(req, res));
+router.post('/:id/confirm', authenticate, authorize('admin', 'manager', 'receptionist'), audit({
+  action: 'BOOKING_PAYMENT_CONFIRMED', targetEntity: 'bookings', getEntityId: req => Number(req.params.id),
+  getDetails: () => 'Nhân viên xác nhận đã nhận thanh toán tại quầy'
+}), (req, res) => bookingController.confirm(req, res));
 
 /**
  * POST /api/v1/bookings/:id/check-in
  */
-router.post('/:id/check-in', authenticate, authorize('admin', 'manager', 'receptionist'), (req, res) => bookingController.checkIn(req, res));
+router.post('/:id/check-in', authenticate, authorize('admin', 'manager', 'receptionist'), audit({
+  action: 'BOOKING_CHECKED_IN', targetEntity: 'bookings', getEntityId: req => Number(req.params.id)
+}), (req, res) => bookingController.checkIn(req, res));
 
 /**
  * POST /api/v1/bookings/:id/check-out

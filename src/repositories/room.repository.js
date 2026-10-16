@@ -1,6 +1,16 @@
 const db = require('../config/db');
 
 class RoomRepository {
+  async findAvailable({ room_type_id, check_in_date, check_out_date }) {
+    const result = await db.query(`SELECT r.id, r.room_number, r.room_type_id, r.floor
+      FROM rooms r WHERE r.room_type_id = $1
+      AND r.status NOT IN ('maintenance', 'cleaning')
+      AND NOT EXISTS (SELECT 1 FROM bookings b WHERE b.room_id = r.id
+        AND b.status IN ('pending_payment', 'confirmed', 'checked_in')
+        AND b.check_in_date < $3::date AND b.check_out_date > $2::date)
+      ORDER BY r.room_number, r.id`, [room_type_id, check_in_date, check_out_date]);
+    return result.rows;
+  }
   /**
    * Lấy danh sách phòng với phân trang và lọc (Tích hợp luôn Hạng mục 6)
    */

@@ -2,6 +2,10 @@ const roomRepository = require('../repositories/room.repository');
 const { AppError } = require('../utils/response');
 
 class RoomService {
+  async getAvailableRooms(query) {
+    await require('../repositories/booking.repository').expireHolds();
+    return roomRepository.findAvailable(query);
+  }
   async getRooms(query) {
     const page = Math.max(1, parseInt(query.page, 10) || 1);
     const requestedLimit = parseInt(query.limit, 10) || 10;
@@ -49,7 +53,14 @@ class RoomService {
       throw new AppError('RESOURCE_EXISTS', 'Số phòng này đã tồn tại trong hệ thống.', 400);
     }
     
-    return await roomRepository.create(data);
+    try {
+      return await roomRepository.create(data);
+    } catch (error) {
+      if (error.code === 'P0010' || (error.code === '23505' && error.constraint === 'rooms_type_slot_unique')) {
+        throw new AppError('ROOM_LIMIT_REACHED', 'Mỗi hạng phòng có tối đa 10 phòng.', 409);
+      }
+      throw error;
+    }
   }
 
   async updateRoomStatus(id, status) {
@@ -72,12 +83,7 @@ class RoomService {
       throw new AppError('RESOURCE_NOT_FOUND', 'Không tìm thấy thông tin phòng để xóa.', 404);
     }
 
-    if (room.status === 'occupied' || room.status === 'booked') {
-      throw new AppError('INVALID_STATE', 'Không thể xóa phòng đang có khách hoặc đã được đặt.', 400);
-    }
-
-    await roomRepository.delete(id);
-    return true;
+    throw new AppError('INVALID_STATE', 'Mỗi hạng duy trì 10 phòng. Hãy chuyển phòng sang bảo trì thay vì xóa.', 409);
   }
 }
 

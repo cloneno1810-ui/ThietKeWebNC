@@ -29,7 +29,7 @@
   </div>
   <div class="hotel-table-wrap"><table class="data-table">
     <thead>
-      <tr><th>Mã đơn</th><th>Hạng phòng</th><th>Thời gian</th><th>Trạng thái</th><th>Hành động</th></tr>
+      <tr><th>Mã đơn</th><th>Hạng phòng</th><th>Số phòng</th><th>Thời gian</th><th>Trạng thái</th><th>Hành động</th></tr>
     </thead>
     <tbody id="bk-body"></tbody>
   </table></div>
@@ -54,9 +54,10 @@
       return '<span class="badge ' + v[0] + '">' + Security.escapeHtml(v[1]) + '</span>';
     }
     function render(list) {
-      list = list.filter(b => (!statusFilter || b.status === statusFilter) && (b.booking_code + ' ' + (b.room_type_name || '')).toLowerCase().includes(searchText));
+      list = list.filter(b => (!statusFilter || b.status === statusFilter) && (b.booking_code + ' ' + (b.room_type_name || '') + ' ' + (b.room_number || '')).toLowerCase().includes(searchText));
       document.getElementById('bk-body').innerHTML = list.map((b) =>
         '<tr><td class="hotel-booking-code">' + Security.escapeHtml(b.booking_code) + '</td><td>' + Security.escapeHtml(b.room_type_name || '-') + '</td>' +
+        '<td>' + Security.escapeHtml(b.room_number || 'Chưa cấp phòng') + '</td>' +
         '<td class="hotel-booking-date">' + String(b.check_in_date).substring(0,10) + ' → ' + String(b.check_out_date).substring(0,10) + '</td>' +
         '<td>' + badge(b.status) + '</td><td>' +
         ((b.status === 'pending_payment' || b.status === 'confirmed')
@@ -64,7 +65,7 @@
             (cancellingIds.has(String(b.id)) ? ' disabled>Đang hủy…</button>' : '>Hủy đơn</button>')
           : '-') +
         '</td></tr>'
-      ).join('') || '<tr><td colspan="5">Không có đơn đặt phòng phù hợp.</td></tr>';
+      ).join('') || '<tr><td colspan="6">Không có đơn đặt phòng phù hợp.</td></tr>';
       document.querySelectorAll('[data-cancel-booking]').forEach((button) => {
         button.addEventListener('click', () => cancelBooking(button.dataset.cancelBooking));
       });

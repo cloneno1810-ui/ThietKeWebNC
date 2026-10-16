@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow"><title>Tài khoản nhân viên</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/shared/layout.css">
+  <link rel="stylesheet" href="/shared/accessibility.css">
+  <script src="/shared/auth-guard.js"></script><script src="/shared/api.js"></script>
+  <script src="/shared/ui-wrapper.js"></script><script src="/shared/accessibility.js" defer></script>
+</head>
+<body>
+  <h1>Tài khoản nhân viên</h1>
+  <p>Admin tạo tài khoản cho lễ tân, quản lý và quản trị viên.</p>
+  <form id="staff-form" class="modal-box" style="width:100%;max-width:600px;margin:24px 0" aria-describedby="staff-message">
+    <label for="staff-name">Họ và tên</label><input id="staff-name" name="fullName" required minlength="2" maxlength="100" autocomplete="off">
+    <label for="staff-email">Email đăng nhập</label><input id="staff-email" name="email" type="email" required maxlength="255" autocomplete="off">
+    <label for="staff-password">Mật khẩu (ít nhất 8 ký tự, tối đa 72 byte UTF-8)</label>
+    <input id="staff-password" name="password" type="password" required minlength="8" autocomplete="new-password">
+    <label for="staff-role">Vai trò</label>
+    <select id="staff-role" name="role" required><option value="receptionist">Lễ tân</option><option value="manager">Quản lý</option><option value="admin">Quản trị viên</option></select>
+    <button id="staff-submit" type="submit" class="btn btn-primary">Tạo tài khoản</button>
+    <p id="staff-message" role="status" aria-live="polite"></p>
+  </form>
+  <h2>Tài khoản nhân viên mới nhất</h2><p>Hiển thị tối đa 100 tài khoản.</p>
+  <button id="staff-reload" type="button" class="btn">Tải lại danh sách</button>
+  <div style="overflow-x:auto"><table class="data-table"><thead><tr><th>Họ tên</th><th>Email</th><th>Vai trò</th></tr></thead><tbody id="staff-list"></tbody></table></div>
+  <script>
+    const roles = { receptionist: 'Lễ tân', manager: 'Quản lý', admin: 'Quản trị viên' };
+    let creating = false;
+    async function loadStaff() {
+      const body = document.getElementById('staff-list');
+      try {
+        const response = await API.request('/api/v1/staff-accounts');
+        if (response.status !== 200) throw new Error(response.data.error?.message || 'Không tải được danh sách.');
+        body.replaceChildren();
+        for (const user of response.data.data.users) {
+          const row = document.createElement('tr');
+          [user.full_name, user.email, roles[user.role] || user.role].forEach(value => {
+            const cell = document.createElement('td'); cell.textContent = value; row.appendChild(cell);
+          });
+          body.appendChild(row);
+        }
+      } catch (error) { showToast('Không tải được tài khoản', error.message); }
+    }
+    document.addEventListener('DOMContentLoaded', async () => {
+      await window.authReady;
+      if (localStorage.getItem('role') !== 'admin') return;
+      loadStaff();
+      document.getElementById('staff-reload').addEventListener('click', loadStaff);
+      const form = document.getElementById('staff-form');
+      const password = document.getElementById('staff-password');
+      password.addEventListener('input', () => password.setCustomValidity(new TextEncoder().encode(password.value).length > 72 ? 'Mật khẩu tối đa 72 byte UTF-8.' : ''));
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (creating) return;
+        const payload = Object.fromEntries(new FormData(form));
+        if (payload.role === 'admin' && !confirm('Tạo tài khoản có toàn quyền quản trị hệ thống?')) return;
+        creating = true;
+        const button = document.getElementById('staff-submit'); button.disabled = true;
+        const message = document.getElementById('staff-message'); message.textContent = 'Đang tạo tài khoản…';
+        try {
+          const response = await API.request('/api/v1/staff-accounts', 'POST', payload);
+          if (response.status !== 201) throw new Error(response.data.error?.details?.map(item => item.message || item.issue).join(' ') || response.data.error?.message || 'Không tạo được tài khoản.');
+          message.textContent = 'Đã tạo tài khoản ' + response.data.data.user.email + '. Nhân viên có thể đăng nhập bằng mật khẩu vừa đặt.';
+          form.reset(); password.setCustomValidity(''); await loadStaff();
+        } catch (error) { message.textContent = error.message; }
+        finally { creating = false; button.disabled = false; }
+      });
+    });
+  </script>
+</body>
+</html>

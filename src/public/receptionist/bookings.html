@@ -58,7 +58,7 @@
           <label class="sr-only" for="status-filter">Lọc theo trạng thái</label><select id="status-filter" title="Lọc theo trạng thái">
             <option value="">Bộ lọc</option>
             <option value="pending_payment">Chờ thanh toán</option>
-            <option value="confirmed">Đã xác nhận</option>
+            <option value="confirmed">Đã xác nhận thanh toán</option>
             <option value="checked_in">Đang ở</option>
             <option value="checked_out">Đã trả phòng</option>
             <option value="cancelled">Đã hủy</option>
@@ -111,7 +111,7 @@
           <div class="bill-card">
             <div class="bill-row"><span>Tiền phòng</span><span id="bl-room">0</span></div>
             <div class="bill-row"><span>Phụ phí</span><span>0 đ</span></div>
-            <div class="bill-row"><span>VAT (8%)</span><span id="bl-vat">0</span></div>
+            <div class="bill-row"><span>Phụ thu thuế riêng</span><span id="bl-vat">0</span></div>
             <div class="bill-total"><span>Tổng cộng</span><span id="bl-total">0</span></div>
           </div>
           <h3 style="font-size:1rem;margin-bottom:12px">Vị trí khách sạn</h3>
@@ -142,13 +142,14 @@
     let selectedId = null;
     let statusFilter = '';
     let searchText = '';
+    const pendingActions = new Set();
 
     function formatMoney(num) { return Number(num).toLocaleString('vi-VN') + ' đ'; }
 
     function getBadge(status) {
       const map = {
         pending_payment: ['yellow', 'Chờ thanh toán'],
-        confirmed: ['blue', 'Đã xác nhận'],
+        confirmed: ['blue', 'Đã xác nhận thanh toán'],
         checked_in: ['green', 'Đang ở'],
         checked_out: ['green', 'Đã check-out'],
         cancelled: ['red', 'Đã hủy']
@@ -198,7 +199,7 @@
     function renderList() {
       const list = filtered();
       const html = list.map((b) => {
-        return '<div class="booking-card' + (selectedId === b.id ? ' active' : '') + '" data-booking-id="' + b.id + '" id="card-' + b.id + '">' +
+        return '<div class="booking-card' + (String(selectedId) === String(b.id) ? ' active' : '') + '" data-booking-id="' + b.id + '" id="card-' + b.id + '">' +
           '<div class="card-top"><div class="card-id">Mã đơn #' + Security.escapeHtml(b.booking_code) + '</div>' + getBadge(b.status) + '</div>' +
           '<div class="card-customer">' + Security.escapeHtml(b.guest_name) + '</div>' +
           '<div class="card-time">' + String(b.check_in_date).substring(0, 10) + ' → ' + String(b.check_out_date).substring(0, 10) + '</div>' +
@@ -247,7 +248,7 @@
       const card = document.getElementById('card-' + id);
       if (card) card.classList.add('active');
       document.getElementById('detail-panel').style.display = 'block';
-      const b = allBookings.find((x) => x.id === id);
+      const b = allBookings.find((x) => String(x.id) === String(id));
       if (!b) return;
 
       document.getElementById('dt-id').innerText = '#' + b.booking_code;
@@ -260,8 +261,8 @@
 
       const price = Number(b.total_price);
       document.getElementById('bl-room').innerText = formatMoney(price);
-      document.getElementById('bl-vat').innerText = formatMoney(price * 0.08);
-      document.getElementById('bl-total').innerText = formatMoney(price * 1.08);
+      document.getElementById('bl-vat').innerText = formatMoney(0);
+      document.getElementById('bl-total').innerText = formatMoney(price);
 
       const tlItem = (icon, title, time, active) =>
         '<div class="tl-item"><div class="tl-icon" style="background:' + (active ? '#eff6ff' : '#f1f5f9') + ';color:' + (active ? '#3b82f6' : '#94a3b8') + '"><i class="fa-solid ' + icon + '"></i></div>' +
@@ -272,13 +273,15 @@
       if (b.status === 'cancelled') {
         timeline += tlItem('fa-ban', 'Đã hủy', '-', true);
       } else {
-        const isConfirmed = b.status !== 'pending_payment';
+        const isConfirmed = ['confirmed', 'checked_in', 'checked_out'].includes(b.status);
         const isCheckIn = b.status === 'checked_in' || b.status === 'checked_out';
         const isCheckOut = b.status === 'checked_out';
-        timeline += tlItem('fa-thumbs-up', 'Đã xác nhận', isConfirmed ? 'Hoàn tất' : 'Chờ xử lý', isConfirmed);
+        timeline += tlItem('fa-thumbs-up', 'Đã xác nhận thanh toán', isConfirmed ? 'Hoàn tất' : 'Chờ xử lý', isConfirmed);
         timeline += tlItem('fa-door-open', 'Check-in', isCheckIn ? 'Đã nhận phòng' : '-', isCheckIn);
         timeline += tlItem('fa-door-closed', 'Check-out', isCheckOut ? 'Đã trả phòng' : '-', isCheckOut);
-        if (b.status === 'confirmed' || b.status === 'pending_payment') {
+        if (b.status === 'pending_payment') {
+          actionBtn = '<button type="button" class="action-btn btn-primary" data-booking-action="' + b.id + '" data-action="confirm">Xác nhận đã thu tiền</button>';
+        } else if (b.status === 'confirmed') {
           actionBtn = '<button type="button" class="action-btn btn-primary" data-booking-action="' + b.id + '" data-action="check-in">Thực hiện Check-in</button>';
         } else if (b.status === 'checked_in') {
           actionBtn = '<button type="button" class="action-btn btn-primary" style="background:#10b981" data-booking-action="' + b.id + '" data-action="check-out">Thực hiện Check-out</button>';
@@ -289,18 +292,28 @@
     }
 
     async function doAction(id, action) {
-      const res = await API.request('/api/v1/bookings/' + id + '/' + action, 'POST');
-      if (res.status === 200) {
-        showToast('Thành công', action === 'check-in' ? 'Khách đã nhận phòng.' : 'Khách đã trả phòng.', true);
+      const key = String(id);
+      if (pendingActions.has(key)) return;
+      if (action === 'confirm' && !confirm('Bạn xác nhận đã nhận đủ tiền phòng của đơn này?')) return;
+      pendingActions.add(key);
+      document.querySelectorAll('[data-booking-action]').forEach(button => button.disabled = true);
+      try {
+        const res = await API.request('/api/v1/bookings/' + id + '/' + action, 'POST', {});
+        if (res.status !== 200) throw new Error(res.data.error?.message || 'Không thực hiện được.');
+        const messages = { confirm: 'Đã xác nhận thanh toán thu tiền. Có thể thực hiện check-in.', 'check-in': 'Khách đã nhận phòng.', 'check-out': 'Khách đã trả phòng.' };
+        showToast('Thành công', messages[action], true);
         await loadData();
         showDetail(id);
-      } else {
-        showToast('Không thực hiện được', (res.data.error && res.data.error.message) || 'Lỗi hệ thống');
+      } catch (error) {
+        showToast('Không thực hiện được', error.message);
+      } finally {
+        pendingActions.delete(key);
+        document.querySelectorAll('[data-booking-action]').forEach(button => button.disabled = false);
       }
     }
 
     function printInvoice() {
-      const b = allBookings.find((x) => x.id === selectedId);
+      const b = allBookings.find((x) => String(x.id) === String(selectedId));
       if (!b) { showToast('Chọn một đơn trước'); return; }
       const w = window.open('', '_blank');
       if (!w) { showToast('Trình duyệt đang chặn cửa sổ in'); return; }

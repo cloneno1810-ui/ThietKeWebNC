@@ -11,6 +11,8 @@
     "migrate:session6": "node database/migrate_session6.js",
     "migrate:session7": "node database/migrate_session7.js",
     "migrate:session8": "node database/migrate_session8.js",
+    "migrate:session9": "node database/migrate_session9.js",
+    "migrate:room-inventory": "node database/migrate_room_inventory.js",
     "security:scan": "node scripts/scan-secrets.cjs",
     "postman:session8": "node postman/create-session8-bundle.cjs"
   },

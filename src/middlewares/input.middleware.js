@@ -24,9 +24,12 @@ const typeSchema = { name: Joi.string().trim().min(1).max(100), description: Joi
 const typeBody = validate(Joi.object({ ...typeSchema, name: typeSchema.name.required(),
   basePricePerNight: typeSchema.basePricePerNight.required(), maxOccupancy: typeSchema.maxOccupancy.required() }));
 const typeUpdate = validate(Joi.object(typeSchema).min(1));
-const bookingBody = validate(Joi.object({ room_type_id: id.required(), check_in_date: date.required(),
+const bookingBody = validate(Joi.object({ room_type_id: id.required(), room_id: id, check_in_date: date.required(),
   check_out_date: date.required(), num_guests: Joi.number().integer().min(1).max(1000).required(),
   guest_name: Joi.string().trim().max(100), guest_email: Joi.string().email().max(255),
   guest_phone: Joi.string().pattern(/^[0-9+ -]{7,20}$/), user_id: id.allow(null) }));
-module.exports = { validateId, roomsQuery, roomBody, typeBody, typeUpdate, bookingBody,
+const availableRoomsQuery = validate(Joi.object({ room_type_id: id.required(),
+  check_in_date: date.required(), check_out_date: date.required()
+}).custom((value, helpers) => value.check_out_date > value.check_in_date ? value : helpers.error('any.invalid')), 'query');
+module.exports = { validateId, roomsQuery, availableRoomsQuery, roomBody, typeBody, typeUpdate, bookingBody,
   reportQuery: validate(Joi.object({ from: date, to: date }), 'query') };

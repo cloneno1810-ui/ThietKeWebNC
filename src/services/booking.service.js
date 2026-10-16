@@ -144,6 +144,9 @@ class BookingService {
   }
 
   async confirmBooking(bookingId, currentUser) {
+    if (!['admin', 'manager', 'receptionist'].includes(currentUser.role)) {
+      throw new AppError('FORBIDDEN', 'Chỉ nhân viên được xác nhận đã nhận thanh toán.', 403);
+    }
     const booking = await this.getBookingDetail(bookingId, currentUser);
     if (booking.status !== 'pending_payment') {
       throw new AppError('INVALID_STATE', `Chỉ xác nhận được đơn đang chờ thanh toán. Trạng thái hiện tại: ${booking.status}.`, 422);
@@ -167,13 +170,8 @@ class BookingService {
     }
     
     // Update booking status
-    const updated = await bookingRepository.updateStatus(booking.id, 'checked_in');
-    
-    // If a room is assigned, update room status
-    if (booking.room_id) {
-      const roomRepository = require('../repositories/room.repository');
-      await roomRepository.updateStatus(booking.room_id, 'occupied');
-    }
+    const updated = await bookingRepository.checkInConfirmed(booking.id);
+    if (!updated) throw new AppError('INVALID_STATE', 'Đơn hoặc phòng đã đổi trạng thái; chỉ check-in đơn đã xác nhận và phòng sẵn sàng.', 422);
     
     return updated;
   }

@@ -26,7 +26,7 @@
   </main>
 
   <div class="modal-overlay" id="bookModal" role="dialog" aria-modal="true" aria-labelledby="book-heading" aria-hidden="true">
-    <form class="modal-box" id="booking-form"><span class="hotel-eyebrow">KỲ NGHỈ CỦA BẠN</span><h3 id="book-heading">Đặt phòng</h3><p id="book-rt-name"></p><input type="hidden" id="book-rt-id"><label for="book-ci">Ngày nhận phòng</label><input type="date" id="book-ci" required><label for="book-co">Ngày trả phòng</label><input type="date" id="book-co" required><label for="book-guests">Số khách</label><input type="number" id="book-guests" min="1" value="1" required><div class="hotel-modal-price" id="book-price" aria-live="polite"></div><div class="modal-actions"><button type="button" class="btn btn-ghost" id="book-cancel">Quay lại</button><button type="submit" class="btn btn-primary" id="book-confirm">Xác nhận đặt phòng</button></div></form>
+    <form class="modal-box" id="booking-form"><span class="hotel-eyebrow">KỲ NGHỈ CỦA BẠN</span><h3 id="book-heading">Đặt phòng</h3><p id="book-rt-name"></p><input type="hidden" id="book-rt-id"><label for="book-ci">Ngày nhận phòng</label><input type="date" id="book-ci" required><label for="book-co">Ngày trả phòng</label><input type="date" id="book-co" required><label for="book-guests">Số khách</label><input type="number" id="book-guests" min="1" value="1" required><label for="book-room">Số phòng</label><select id="book-room" required disabled aria-describedby="book-room-status"><option value="">Chọn ngày để xem phòng trống</option></select><p id="book-room-status" role="status" aria-live="polite"></p><div class="hotel-modal-price" id="book-price" aria-live="polite"></div><div class="modal-actions"><button type="button" class="btn btn-ghost" id="book-cancel">Quay lại</button><button type="submit" class="btn btn-primary" id="book-confirm">Xác nhận đặt phòng</button></div></form>
   </div>
 
   <script>
@@ -35,6 +35,8 @@
     let keyword = '';
     let submitting = false;
     let lastTrigger = null;
+    let availabilityVersion = 0;
+    let roomsLoading = false;
     function matchingTypes() {
       const guests = Number(document.getElementById('search-guests').value);
       return types.filter(rt => Number(rt.max_occupancy) >= guests && (rt.name + ' ' + (rt.description || '')).toLowerCase().includes(keyword));
@@ -72,6 +74,35 @@
       document.getElementById('book-price').textContent = selectedType && nights > 0 ? 'Tiền phòng cho ' + nights + ' đêm: ' + Hotel.money(Number(selectedType.base_price_per_night) * nights) : 'Chọn ngày trả phòng sau ngày nhận phòng.';
       document.getElementById('book-co').setCustomValidity(checkOut && checkOut <= checkIn ? 'Ngày trả phòng phải sau ngày nhận phòng.' : '');
     }
+    async function loadAvailableRooms() {
+      const version = ++availabilityVersion;
+      const select = document.getElementById('book-room');
+      const message = document.getElementById('book-room-status');
+      const button = document.getElementById('book-confirm');
+      select.replaceChildren(new Option('Chọn số phòng', ''));
+      select.disabled = true; button.disabled = true; roomsLoading = true;
+      const checkIn = document.getElementById('book-ci').value;
+      const checkOut = document.getElementById('book-co').value;
+      if (!selectedType || !checkIn || !checkOut || checkOut <= checkIn) {
+        message.textContent = 'Chọn ngày nhận và trả phòng hợp lệ.';
+        roomsLoading = false; return;
+      }
+      message.textContent = 'Đang tìm phòng trống…';
+      try {
+        const query = new URLSearchParams({ room_type_id: selectedType.id, check_in_date: checkIn, check_out_date: checkOut });
+        const result = await API.request('/api/v1/rooms/available?' + query);
+        if (version !== availabilityVersion) return;
+        if (result.status !== 200) throw new Error(result.data.error?.message || 'Không tải được phòng trống.');
+        const rooms = result.data.data.rooms || [];
+        rooms.forEach(room => select.add(new Option('Phòng ' + room.room_number + ' · Tầng ' + room.floor, String(room.id))));
+        select.disabled = rooms.length === 0 || submitting;
+        message.textContent = rooms.length ? rooms.length + ' phòng trống. Vui lòng chọn số phòng bạn muốn đặt.' : 'Hết phòng trong khoảng ngày này. Vui lòng chọn ngày khác.';
+      } catch (error) {
+        if (version === availabilityVersion) message.textContent = error.message + ' Hãy chọn lại ngày để tải lại.';
+      } finally {
+        if (version === availabilityVersion) { roomsLoading = false; button.disabled = submitting || !select.value; }
+      }
+    }
     function openBook(id) {
       selectedType = types.find(rt => String(rt.id) === String(id));
       if (!selectedType) return;
@@ -82,7 +113,7 @@
       document.getElementById('book-co').value = document.getElementById('search-co').value;
       document.getElementById('book-guests').value = Math.min(Number(document.getElementById('search-guests').value), Number(selectedType.max_occupancy));
       document.getElementById('book-guests').max = selectedType.max_occupancy;
-      const modal = document.getElementById('bookModal'); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); updatePrice(); document.getElementById('book-ci').focus();
+      const modal = document.getElementById('bookModal'); modal.classList.add('open'); modal.setAttribute('aria-hidden', 'false'); updatePrice(); loadAvailableRooms(); document.getElementById('book-ci').focus();
     }
     function closeBook() {
       if (submitting) return;
@@ -91,16 +122,20 @@
     }
     async function submitBook(event) {
       event.preventDefault();
-      if (submitting) return;
+      if (submitting || roomsLoading || !document.getElementById('book-room').value) return;
       submitting = true;
+      document.querySelectorAll('#booking-form input, #booking-form select').forEach(field => field.disabled = true);
       const button = document.getElementById('book-confirm'); button.disabled = true; button.textContent = 'Đang đặt phòng…';
       try {
-        const result = await API.request('/api/v1/bookings', 'POST', { room_type_id: Number(document.getElementById('book-rt-id').value), check_in_date: document.getElementById('book-ci').value, check_out_date: document.getElementById('book-co').value, num_guests: Number(document.getElementById('book-guests').value) });
-        if (result.status !== 201) throw new Error(result.data.error?.message || 'Không đặt được phòng. Vui lòng thử lại.');
+        const result = await API.request('/api/v1/bookings', 'POST', { room_type_id: Number(document.getElementById('book-rt-id').value), room_id: Number(document.getElementById('book-room').value), check_in_date: document.getElementById('book-ci').value, check_out_date: document.getElementById('book-co').value, num_guests: Number(document.getElementById('book-guests').value) });
+        if (result.status !== 201) {
+          if (result.status === 409) await loadAvailableRooms();
+          throw new Error(result.data.error?.message || 'Không đặt được phòng. Vui lòng thử lại.');
+        }
         Hotel.savePreferences({ checkIn: document.getElementById('book-ci').value, checkOut: document.getElementById('book-co').value, guests: Number(document.getElementById('book-guests').value) });
         location.href = '/guest/my-bookings.html';
       } catch (error) { showToast('Không đặt được phòng', error.message); }
-      finally { submitting = false; button.disabled = false; button.textContent = 'Xác nhận đặt phòng'; }
+      finally { submitting = false; document.querySelectorAll('#booking-form input').forEach(field => field.disabled = false); document.getElementById('book-room').disabled = document.getElementById('book-room').options.length <= 1; button.disabled = roomsLoading || !document.getElementById('book-room').value; button.textContent = 'Xác nhận đặt phòng'; }
     }
     document.addEventListener('DOMContentLoaded', () => {
       const preferences = Hotel.preferences();
@@ -119,12 +154,13 @@
       document.getElementById('booking-form').addEventListener('submit', submitBook);
       document.getElementById('book-cancel').addEventListener('click', closeBook);
       document.getElementById('bookModal').addEventListener('click', event => { if (event.target === event.currentTarget) closeBook(); });
-      ['book-ci', 'book-co'].forEach(id => document.getElementById(id).addEventListener('input', updatePrice));
+      ['book-ci', 'book-co'].forEach(id => document.getElementById(id).addEventListener('input', () => { updatePrice(); loadAvailableRooms(); }));
+      document.getElementById('book-room').addEventListener('change', event => { document.getElementById('book-confirm').disabled = submitting || roomsLoading || !event.target.value; });
       document.addEventListener('keydown', event => {
         const modal = document.getElementById('bookModal'); if (!modal.classList.contains('open')) return;
         if (event.key === 'Escape') closeBook();
         if (event.key === 'Tab') {
-          const fields = [...modal.querySelectorAll('input:not([type=hidden]),button')].filter(node => !node.disabled);
+          const fields = [...modal.querySelectorAll('input:not([type=hidden]),select,button')].filter(node => !node.disabled);
           if (event.shiftKey && document.activeElement === fields[0]) { event.preventDefault(); fields.at(-1).focus(); }
           else if (!event.shiftKey && document.activeElement === fields.at(-1)) { event.preventDefault(); fields[0].focus(); }
         }

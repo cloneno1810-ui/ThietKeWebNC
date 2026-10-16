@@ -1,10 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
-
 :root { --hotel-teal: #279f91; --hotel-teal-dark: #187e73; --hotel-yellow: #ffbd16; --hotel-ink: #293c3b; --hotel-muted: #61756f; --hotel-paper: #f5f8f6; --hotel-line: #e2ebe5; }
 html { scroll-behavior: smooth; scroll-padding-top: 100px; }
-body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: visible; margin: 0; color: var(--hotel-ink); background: #fff; font-family: Inter, sans-serif; line-height: 1.65; }
+body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: visible; margin: 0; color: var(--hotel-ink); background: #fff; font-family: "Segoe UI", Arial, sans-serif; line-height: 1.65; }
 .hotel-page *, .hotel-auth * { box-sizing: border-box; }
-.hotel-page h1, .hotel-page h2, .hotel-page h3, .hotel-auth h1, .hotel-auth h2 { font-family: Manrope, Inter, sans-serif; }
+.hotel-page h1, .hotel-page h2, .hotel-page h3, .hotel-auth h1, .hotel-auth h2 { font-family: "Segoe UI", Arial, sans-serif; }
 .hotel-page a { color: inherit; text-decoration: none; }
 .hotel-page button, .hotel-page input, .hotel-page select { font: inherit; }
 .hotel-page button { cursor: pointer; }
@@ -14,10 +12,10 @@ body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: vis
 .hotel-header { height: 94px; position: sticky; top: 0; z-index: 60; background: #fff; border-bottom: 1px solid var(--hotel-line); }
 .hotel-header-inner { height: 100%; display: flex; align-items: center; gap: 30px; }
 .hotel-brand { display: flex; align-items: center; gap: 13px; flex-shrink: 0; }
-.hotel-mark { display: grid; place-content: center; width: 59px; height: 59px; background: var(--hotel-teal); color: #fff; border-radius: 6px 18px 6px 18px; font: 800 25px/1 Manrope, sans-serif; letter-spacing: -1.5px; position: relative; }
+.hotel-mark { display: grid; place-content: center; width: 59px; height: 59px; background: var(--hotel-teal); color: #fff; border-radius: 6px 18px 6px 18px; font: 800 25px/1 "Segoe UI", Arial, sans-serif; letter-spacing: -1.5px; position: relative; }
 .hotel-mark::after { content: ''; position: absolute; inset: 5px; border: 1px solid #ffffff6b; border-radius: 3px 13px 3px 13px; }
 .hotel-mark small { font-size: 11px; letter-spacing: 2px; margin-top: 6px; text-align: center; }
-.hotel-brand-name { font: 800 19px/1.3 Manrope, sans-serif; }
+.hotel-brand-name { font: 800 19px/1.3 "Segoe UI", Arial, sans-serif; }
 .hotel-brand-note { display: block; color: var(--hotel-muted); font-size: 11px; letter-spacing: 1.1px; margin-top: 4px; }
 .hotel-nav { display: flex; align-items: center; gap: 27px; margin-left: auto; font-size: 13px; font-weight: 500; }
 .hotel-nav a:hover, .hotel-nav a[aria-current=page] { color: var(--hotel-teal-dark); }
@@ -146,7 +144,8 @@ body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: vis
 .hotel-page .modal-box h3 { color: var(--hotel-ink); font-size: 25px; margin-bottom: 6px; }
 .hotel-page .modal-box p { color: var(--hotel-muted); font-size: 12px; }
 .hotel-page .modal-box label { color: var(--hotel-ink); font-size: 12px; margin-top: 17px; }
-.hotel-page .modal-box input { padding: 12px 14px; border-color: var(--hotel-line); color: var(--hotel-ink); }
+.hotel-page .modal-box input, .hotel-page .modal-box select { padding: 12px 14px; border-color: var(--hotel-line); color: var(--hotel-ink); }
+#bookModal .modal-box { max-height: calc(100dvh - 40px); overflow-y: auto; }
 .hotel-modal-price { padding: 17px; background: #eef6f1; border-radius: 11px; margin-top: 19px; font-size: 13px; color: var(--hotel-teal-dark); }
 .hotel-page .modal-actions { margin-top: 24px; }
 .hotel-page .badge { border-radius: 20px; font-weight: 500; padding: 6px 12px; font-size: 11px; white-space: nowrap; }
@@ -157,7 +156,7 @@ body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: vis
 .hotel-booking-summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 30px 0; }
 .hotel-booking-summary > div { border: 1px solid var(--hotel-line); border-radius: 14px; padding: 21px 25px; background: #fff; }
 .hotel-booking-summary small { color: var(--hotel-muted); font-size: 11px; }
-.hotel-booking-summary strong { display: block; font: 700 29px Manrope, sans-serif; color: var(--hotel-teal-dark); margin-top: 5px; }
+.hotel-booking-summary strong { display: block; font: 700 29px "Segoe UI", Arial, sans-serif; color: var(--hotel-teal-dark); margin-top: 5px; }
 .hotel-table-wrap { overflow-x: auto; border: 1px solid var(--hotel-line); border-radius: 14px; }
 .hotel-page table.data-table { border-radius: 0; box-shadow: none; min-width: 710px; }
 .hotel-page table.data-table th { background: #f5f8f5; color: var(--hotel-muted); font-weight: 500; font-size: 11px; padding: 19px 23px; }
@@ -169,7 +168,7 @@ body.hotel-page { display: block; height: auto; min-height: 100vh; overflow: vis
 .hotel-page .toolbar { margin-bottom: 22px; }
 .hotel-page .page-h2 { font-size: 24px; margin: 0; }
 
-body.hotel-auth { display: grid; grid-template-columns: 1.1fr 1fr; align-items: stretch; padding: 0; min-height: 100vh; background: #fff; color: var(--hotel-ink); font-family: Inter, sans-serif; }
+body.hotel-auth { display: grid; grid-template-columns: 1.1fr 1fr; align-items: stretch; padding: 0; min-height: 100vh; background: #fff; color: var(--hotel-ink); font-family: "Segoe UI", Arial, sans-serif; }
 .hotel-auth .auth-story { position: relative; min-height: 100vh; background: #1c756b; overflow: hidden; }
 .auth-story > img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .auth-story::after { content: ''; position: absolute; inset: 0; background: linear-gradient(#123b3320, #153f33cf); }
