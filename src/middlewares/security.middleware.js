@@ -1,5 +1,5 @@
 const crypto = require('crypto');
-const { production, origins, matchesCsrf } = require('../config/security');
+const { production, appOrigin, origins, matchesCsrf } = require('../config/security');
 const { AppError } = require('../utils/response');
 
 function requestContext(req, res, next) {
@@ -12,7 +12,7 @@ function requestContext(req, res, next) {
 function requireHttps(req, res, next) {
   if (production && !req.secure) {
     // Canonical origin comes from deployment configuration, never the Host header.
-    return res.redirect(308, process.env.APP_ORIGIN + req.originalUrl);
+    return res.redirect(308, appOrigin + req.originalUrl);
   }
   next();
 }

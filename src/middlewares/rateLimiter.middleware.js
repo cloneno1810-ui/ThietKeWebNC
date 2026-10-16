@@ -10,7 +10,7 @@ const limitReachedHandler = async (req, res, next, options) => {
 // Lớp 1: Giới hạn API - 100 requests / phút / IP
 const globalLimiter = rateLimit({
   windowMs: 1 * 60 * 1000,
-  max: 100,
+  max: Number(process.env.RATE_LIMIT_GLOBAL_MAX || 100),
   message: 'Bạn đã gửi quá nhiều yêu cầu từ IP này, vui lòng thử lại sau 1 phút.',
   handler: limitReachedHandler,
   standardHeaders: true, // Trả về RateLimit-* headers

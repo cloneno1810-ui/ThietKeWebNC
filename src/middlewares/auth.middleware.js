@@ -1,6 +1,5 @@
 const jwt = require('jsonwebtoken');
 const { AppError, sendError } = require('../utils/response');
-const userRepository = require('../repositories/user.repository');
 
 const security = require('../config/security');
 const sessions = require('../repositories/session.repository');
@@ -35,12 +34,12 @@ const authenticate = async (req, res, next) => {
       return sendError(res, new AppError('UNAUTHORIZED', 'Token không hợp lệ hoặc đã hết hạn.', 401));
     }
 
-    if (!decoded.id || !/^[0-9a-f-]{36}$/i.test(decoded.jti || '') || !(await sessions.isActive(decoded.jti, decoded.id))) {
+    if (!decoded.id || !/^[0-9a-f-]{36}$/i.test(decoded.jti || '')) {
       return sendError(res, new AppError('UNAUTHORIZED', 'Phiên đã kết thúc hoặc không hợp lệ. Vui lòng đăng nhập lại.', 401));
     }
     req.session = { id: decoded.jti, token };
     res.setHeader('Cache-Control', 'no-store');
-    const currentUser = await userRepository.findById(decoded.id);
+    const currentUser = await sessions.findActiveUser(decoded.jti, decoded.id);
     if (!currentUser) {
       return sendError(res, new AppError('UNAUTHORIZED', 'Người dùng thuộc token này không còn tồn tại.', 401));
     }

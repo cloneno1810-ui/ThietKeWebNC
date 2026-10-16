@@ -1,7 +1,7 @@
 const Joi = require('joi');
 
 const registerSchema = Joi.object({
-  email: Joi.string().email().required().messages({
+  email: Joi.string().trim().lowercase().email().required().messages({
     'string.email': 'Email không hợp lệ.',
     'any.required': 'Vui lòng cung cấp email.'
   }),
@@ -10,7 +10,7 @@ const registerSchema = Joi.object({
     'string.min': 'Mật khẩu phải chứa ít nhất 8 ký tự.',
     'any.required': 'Vui lòng cung cấp mật khẩu.'
   }),
-  fullName: Joi.string().min(2).max(100).required().messages({
+  fullName: Joi.string().trim().min(2).max(100).required().messages({
     'string.min': 'Họ tên phải có ít nhất 2 ký tự.',
     'any.required': 'Vui lòng cung cấp họ và tên.'
   }),

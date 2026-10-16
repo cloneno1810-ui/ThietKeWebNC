@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Đăng nhập</title>
   <script src="/shared/api.js"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: Inter, sans-serif; }
 
@@ -247,34 +244,41 @@
     .help-wrapper:focus-within .help-tooltip { display: block; }
   </style>
   <link rel="stylesheet" href="/shared/hotel.css">
+<link rel="stylesheet" href="/shared/accessibility.css">
+<script src="/shared/accessibility.js" defer></script>
+<meta name="description" content="Đăng nhập hoặc đăng ký DT07 Hotel để đặt phòng và quản lý lịch lưu trú.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
 <body class="hotel-auth">
-<aside class="auth-story" aria-label="Chào mừng đến DT07 Hotel"><img src="/assets/hotel/hero.jpg" width="2000" height="1050" alt="Không gian nghỉ dưỡng — ảnh minh họa"><div class="auth-story-content"><span>DT07 HOTEL · PHENIKAA STAY</span><h2>Một khoảng nghỉ.<br>Nhiều trải nghiệm.</h2><p>Chọn phòng cho chuyến đi tiếp theo.<br>Những phút giây thư thái đang chờ bạn.</p></div></aside>
-<div class="card">
+<aside class="auth-story" aria-label="Chào mừng đến DT07 Hotel"><img src="/assets/hotel/hero.webp" width="2000" height="1050" alt="Không gian nghỉ dưỡng — ảnh minh họa" srcset="/assets/hotel/hero-480.webp 480w, /assets/hotel/hero-960.webp 960w, /assets/hotel/hero.webp 1600w" sizes="(max-width: 640px) 100vw, 50vw"><div class="auth-story-content"><span>DT07 HOTEL · PHENIKAA STAY</span><h2>Một khoảng nghỉ.<br>Nhiều trải nghiệm.</h2><p>Chọn phòng cho chuyến đi tiếp theo.<br>Những phút giây thư thái đang chờ bạn.</p></div></aside>
+<main class="card" id="main-content">
   <a class="home-link" href="/">← Về trang chủ</a>
   <div class="brand">DT</div>
   <h1>Đăng nhập</h1>
   <p class="auth-intro">Chào mừng bạn trở lại. Đăng nhập để đặt phòng<br>và quản lý những kỳ nghỉ của mình.</p>
 
   <form id="frm">
-    <!-- Ô Email -->
+    <label class="field-label" for="em">Email</label>
+<!-- Ô Email -->
     <div class="field">
       <span class="field-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
         </svg>
       </span>
-      <input id="em" type="text" placeholder="Nhập tài khoản hoặc email" required autocomplete="username">
+      <input id="em" type="email" aria-describedby="msg" placeholder="Nhập tài khoản hoặc email" required autocomplete="username">
     </div>
 
-    <!-- Ô Mật khẩu + nút mắt -->
+    <label class="field-label" for="pw">Mật khẩu</label>
+<!-- Ô Mật khẩu + nút mắt -->
     <div class="field">
       <span class="field-icon">
         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M21 2l-2 2m-1.5 1.5L14 9l-1.5-1.5M3 21l9-9m3-3a4.24 4.24 0 1 0-6-6 4.24 4.24 0 0 0 6 6z"/>
         </svg>
       </span>
-      <input id="pw" type="password" placeholder="Nhập mật khẩu" required autocomplete="current-password">
+      <input id="pw" type="password" aria-describedby="msg" placeholder="Nhập mật khẩu" required autocomplete="current-password">
       <!-- Nút con mắt ẩn/hiện mật khẩu -->
       <button type="button" class="eye-btn" id="eyeBtn" title="Ẩn / Hiện mật khẩu">
         <!-- Icon mắt MỞ (mặc định) -->
@@ -310,39 +314,41 @@
 
     <button type="submit" id="btn">ĐĂNG NHẬP</button>
     <button type="button" id="btnShowRegister" class="btn-secondary">TẠO TÀI KHOẢN MỚI</button>
-    <div id="msg" class="msg"></div>
+    <div id="msg" role="status" aria-live="polite" aria-atomic="true" class="msg"></div>
   </form>
   <p class="auth-caption">DT07 Hotel · Một kỳ nghỉ, trong tầm tay bạn.</p>
-</div>
+</main>
 
 <!-- Modal Quên mật khẩu -->
-<div class="modal-overlay" id="forgotModal">
+<div class="modal-overlay" id="forgotModal" role="dialog" aria-modal="true" aria-labelledby="forgot-title" aria-hidden="true">
   <div class="modal-box">
-    <button class="modal-close" id="modalClose">&times;</button>
-    <h3>Khôi phục mật khẩu</h3>
+    <button class="modal-close" id="modalClose" aria-label="Đóng hướng dẫn">&times;</button>
+    <h2 id="forgot-title">Khôi phục mật khẩu</h2>
     <p>Liên hệ quản trị viên đã cấp tài khoản để được hỗ trợ khôi phục mật khẩu. Bạn cần cung cấp email tài khoản.</p>
-    <input type="email" id="forgotEmail" placeholder="Nhập địa chỉ email của bạn">
+    <label class="field-label" for="forgotEmail">Email tài khoản</label><input type="email" id="forgotEmail" placeholder="Nhập địa chỉ email của bạn">
     <div class="modal-actions">
       <button class="btn-cancel" id="modalCancel">Hủy bỏ</button>
       <button class="btn-confirm" id="modalConfirm">Xem hướng dẫn</button>
     </div>
-    <div id="forgotMsg" style="margin-top:12px; font-size:0.88rem; display:none"></div>
+    <div id="forgotMsg" role="status" aria-live="polite" aria-atomic="true" style="margin-top:12px; font-size:0.88rem; display:none"></div>
   </div>
 </div>
 
 <!-- Modal Đăng ký -->
-<div class="modal-overlay" id="registerModal">
+<div class="modal-overlay" id="registerModal" role="dialog" aria-modal="true" aria-labelledby="register-title" aria-hidden="true">
   <div class="modal-box" style="max-width: 420px;">
-    <button class="modal-close" id="modalCloseReg">&times;</button>
-    <h3>Đăng ký tài khoản</h3>
+    <button class="modal-close" id="modalCloseReg" aria-label="Đóng đăng ký">&times;</button>
+    <h2 id="register-title">Đăng ký tài khoản</h2>
     <form id="frmRegister">
-      <input type="text" id="regFullName" placeholder="Họ và tên" required>
-      <input type="email" id="regEmail" placeholder="Địa chỉ email" required>
-      <input type="text" id="regPhone" placeholder="Số điện thoại" required>
-      <input type="text" id="regIdCard" placeholder="Số CCCD/CMND" required>
-      <input type="password" id="regPassword" placeholder="Mật khẩu" required>
+      <label class="field-label" for="regFullName">Họ và tên</label><input type="text" id="regFullName" autocomplete="name" minlength="2" maxlength="100" aria-describedby="regMsg" placeholder="Họ và tên" required>
+      <label class="field-label" for="regEmail">Email</label><input type="email" id="regEmail" autocomplete="email" aria-describedby="regMsg" placeholder="Địa chỉ email" required>
+      <label class="field-label" for="regPhone">Số điện thoại</label><input type="tel" id="regPhone" autocomplete="tel" inputmode="numeric" pattern="[0-9]{10,11}" maxlength="11" aria-describedby="regPhoneHint regMsg" placeholder="Ví dụ: 0901234567" required>
+      <small id="regPhoneHint">Nhập 10–11 chữ số, không có dấu cách hoặc dấu +.</small>
+      <label class="field-label" for="regIdCard">Số CCCD/CMND</label><input type="text" id="regIdCard" inputmode="numeric" pattern="[0-9]{9,12}" minlength="9" maxlength="12" aria-describedby="regIdCardHint regMsg" placeholder="Nhập số trên giấy tờ" required>
+      <small id="regIdCardHint">Nhập từ 9 đến 12 chữ số, không có dấu cách.</small>
+      <label class="field-label" for="regPassword">Mật khẩu (8 ký tự trở lên)</label><input type="password" id="regPassword" autocomplete="new-password" minlength="8" aria-describedby="regMsg" placeholder="Mật khẩu" required>
       
-      <div id="regMsg" class="msg" style="margin-top:0; margin-bottom:14px; font-size:0.88rem; display:none"></div>
+      <div id="regMsg" role="status" aria-live="polite" aria-atomic="true" class="msg" style="margin-top:0; margin-bottom:14px; font-size:0.88rem; display:none"></div>
       
       <div class="modal-actions">
         <button type="button" class="btn-cancel" id="modalCancelReg">Hủy bỏ</button>
@@ -399,10 +405,39 @@
 
   /* =================== MODAL ĐĂNG KÝ =================== */
   var modalReg = document.getElementById('registerModal');
+  var registrationFields = { fullName: 'regFullName', email: 'regEmail', phone: 'regPhone', identityCard: 'regIdCard', password: 'regPassword' };
+  function registrationMessage(input) {
+    var value = input.value;
+    if (!value.trim()) return 'Vui lòng nhập ' + document.querySelector('label[for="' + input.id + '"]').textContent.toLowerCase() + '.';
+    if (input.id === 'regFullName' && (value.trim().length < 2 || value.trim().length > 100)) return 'Họ tên phải từ 2 đến 100 ký tự.';
+    if (input.id === 'regEmail' && input.validity.typeMismatch) return 'Vui lòng nhập email hợp lệ, ví dụ ten@gmail.com.';
+    if (input.id === 'regPhone' && !/^[0-9]{10,11}$/.test(value)) return 'Số điện thoại phải gồm 10–11 chữ số, không có dấu cách hoặc dấu +.';
+    if (input.id === 'regIdCard' && !/^[0-9]{9,12}$/.test(value)) return 'Số CCCD/CMND phải gồm 9–12 chữ số, không có dấu cách.';
+    if (input.id === 'regPassword' && value.length < 8) return 'Mật khẩu phải có ít nhất 8 ký tự.';
+    if (input.id === 'regPassword' && new TextEncoder().encode(value).length > 72) return 'Mật khẩu vượt 72 byte UTF-8. Vui lòng dùng mật khẩu ngắn hơn.';
+    return '';
+  }
+  Object.values(registrationFields).forEach(function(id) {
+    var input = document.getElementById(id);
+    input.addEventListener('input', function() {
+      input.setCustomValidity('');
+      input.setCustomValidity(registrationMessage(input));
+      input.removeAttribute('aria-invalid');
+    });
+  });
+  document.getElementById('frmRegister').addEventListener('invalid', function(event) {
+    var input = event.target;
+    var message = registrationMessage(input) || input.validationMessage;
+    input.setCustomValidity(message);
+    input.setAttribute('aria-invalid', 'true');
+    var msg = document.getElementById('regMsg');
+    msg.className = 'msg err'; msg.style.display = 'block'; msg.textContent = message;
+  }, true);
   
   function openRegister() {
     document.getElementById('regMsg').style.display = 'none';
     document.getElementById('frmRegister').reset();
+    Object.values(registrationFields).forEach(function(id) { var input = document.getElementById(id); input.setCustomValidity(''); input.removeAttribute('aria-invalid'); });
     modalReg.classList.add('open');
   }
   document.getElementById('btnShowRegister').addEventListener('click', openRegister);
@@ -419,6 +454,11 @@
     e.preventDefault();
     var btn = document.getElementById('modalConfirmReg');
     var msgEl = document.getElementById('regMsg');
+    if (btn.disabled) return;
+    var invalidInput = Object.values(registrationFields).map(function(id) { return document.getElementById(id); }).find(function(input) {
+      input.setCustomValidity(''); input.setCustomValidity(registrationMessage(input)); return !input.checkValidity();
+    });
+    if (invalidInput) { invalidInput.reportValidity(); return; }
     
     var payload = {
       fullName: document.getElementById('regFullName').value.trim(),
@@ -439,7 +479,7 @@
       credentials: 'include',
       body: JSON.stringify(payload)
     })
-    .then(function(res) { return res.json().then(function(d) { return { status: res.status, data: d }; }); })
+    .then(function(res) { return res.json().catch(function() { return {}; }).then(function(d) { return { status: res.status, data: d, retryAfter: res.headers.get('Retry-After') }; }); })
     .then(function(r) {
       if (r.status === 201 && r.data.success) {
         msgEl.className = 'msg ok';
@@ -453,8 +493,18 @@
         setTimeout(closeRegModal, 2000);
       } else {
         msgEl.className = 'msg err';
-        msgEl.textContent = (r.data.error && r.data.error.message) ? r.data.error.message : 'Đăng ký thất bại. Kiểm tra lại thông tin.';
+        var error = r.data.error || {};
+        var details = Array.isArray(error.details) ? error.details : [];
+        var messages = details.map(function(detail) { return detail.message || detail.issue; }).filter(Boolean);
+        msgEl.textContent = messages.length ? messages.join(' ') : (error.message || 'Đăng ký thất bại (HTTP ' + r.status + '). Vui lòng thử lại.');
+        if (r.status === 429 && Number(r.retryAfter) > 0) msgEl.textContent += ' Thử lại sau khoảng ' + Math.ceil(Number(r.retryAfter) / 60) + ' phút.';
         msgEl.style.display = 'block';
+        var firstInvalid = null;
+        details.forEach(function(detail) {
+          var input = document.getElementById(registrationFields[detail.field]);
+          if (input) { input.setAttribute('aria-invalid', 'true'); firstInvalid = firstInvalid || input; }
+        });
+        if (firstInvalid) firstInvalid.focus();
       }
       btn.disabled = false;
       btn.textContent = 'Đăng ký';
