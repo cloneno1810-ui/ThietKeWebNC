@@ -18,12 +18,14 @@ function getDateRange(query) {
 class ReportService {
   async getAll(query) {
     const range = getDateRange(query);
+    return require('../utils/cache').reports.get(JSON.stringify(range), async () => {
     const [revenueByStatus, bookingsByDay, occupancyByRoomType] = await Promise.all([
       reportRepository.revenueByStatus(range),
       reportRepository.bookingsByDay(range),
       reportRepository.occupancyByRoomType(range)
     ]);
     return { range, revenueByStatus, bookingsByDay, occupancyByRoomType };
+    });
   }
 }
 

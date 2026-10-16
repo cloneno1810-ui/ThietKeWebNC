@@ -8,17 +8,22 @@
   <script src="/shared/auth-guard.js"></script>
   <script src="/shared/api.js"></script>
   <script src="/shared/ui-wrapper.js"></script>
+<link rel="stylesheet" href="/shared/accessibility.css">
+<script src="/shared/accessibility.js" defer></script>
+<meta name="description" content="Danh sách khách lưu trú dành cho nhân viên DT07 Hotel.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
 <body>
   <div class="toolbar">
     <div>
-      <div class="page-h2">Hồ sơ khách hàng</div>
+      <h1 class="page-h2">Hồ sơ khách hàng</h1>
       <p class="muted">Danh sách tài khoản vai trò khách</p>
     </div>
   </div>
   <table class="data-table">
     <thead>
-      <tr><th>Họ tên</th><th>Email</th><th>Điện thoại</th><th>CCCD</th><th></th></tr>
+      <tr><th>Họ tên</th><th>Email</th><th>Điện thoại</th><th>CCCD</th><th>Thao tác</th></tr>
     </thead>
     <tbody id="cus-body"></tbody>
   </table>

@@ -10,13 +10,18 @@
   <script src="/shared/api.js"></script>
   <script src="/shared/hotel.js"></script>
   <script src="/shared/ui-wrapper.js"></script>
+<link rel="stylesheet" href="/shared/accessibility.css">
+<script src="/shared/accessibility.js" defer></script>
+<meta name="description" content="Chọn hạng phòng, ngày lưu trú và số khách tại DT07 Hotel.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
 <body class="hotel-page" data-hotel-page="rooms">
   <main>
-    <section class="hotel-guest-hero"><div class="hotel-container"><div><span class="hotel-eyebrow">MỘT KHÔNG GIAN DÀNH CHO BẠN</span><h1>Chọn phòng. Lên lịch. Nghỉ ngơi.</h1><p>Khám phá hạng phòng phù hợp cho chuyến đi của bạn.</p></div><img class="hotel-guest-room-photo" src="/assets/hotel/room-superior.jpg" alt="Phòng nghỉ sáng và thoáng — ảnh minh họa" width="1000" height="750"></div></section>
+    <section class="hotel-guest-hero"><div class="hotel-container"><div><span class="hotel-eyebrow">MỘT KHÔNG GIAN DÀNH CHO BẠN</span><h1>Chọn phòng. Lên lịch. Nghỉ ngơi.</h1><p>Khám phá hạng phòng phù hợp cho chuyến đi của bạn.</p></div><img class="hotel-guest-room-photo" src="/assets/hotel/room-superior.webp" alt="Phòng nghỉ sáng và thoáng — ảnh minh họa" width="1000" height="750" srcset="/assets/hotel/room-superior-480.webp 480w, /assets/hotel/room-superior-960.webp 960w, /assets/hotel/room-superior.webp 1000w" sizes="(max-width: 640px) 100vw, 50vw"></div></section>
     <div class="hotel-container">
       <form class="hotel-booking-bar" id="room-search-form"><div class="hotel-booking-field"><label for="search-ci">Ngày nhận phòng</label><input id="search-ci" type="date" required></div><div class="hotel-booking-field"><label for="search-co">Ngày trả phòng</label><input id="search-co" type="date" required></div><div class="hotel-booking-field"><label for="search-guests">Số khách</label><select id="search-guests"><option value="1">1 khách</option><option value="2">2 khách</option><option value="3">3 khách</option><option value="4">4 khách</option></select></div><button type="submit" class="hotel-button yellow">Tìm hạng phòng <span aria-hidden="true">→</span></button></form>
-      <section class="hotel-catalog" aria-labelledby="rooms-heading"><div class="hotel-catalog-heading"><div><h2 id="rooms-heading">Các hạng phòng</h2><p id="room-count" aria-live="polite">Đang tải hạng phòng…</p></div><label class="hotel-search"><span id="room-search-icon" aria-hidden="true"></span><input id="room-keyword" type="search" placeholder="Tìm hạng phòng…" aria-label="Tìm theo tên hạng phòng"></label></div><div class="hotel-room-grid" id="rt-grid"></div><p class="muted" style="font-size:11px;margin-top:24px">Tình trạng phòng được xác nhận khi đặt. Hình ảnh phòng dùng để minh họa.</p></section>
+      <section class="hotel-catalog" aria-labelledby="rooms-heading"><div class="hotel-catalog-heading"><div><h2 id="rooms-heading">Các hạng phòng</h2><p id="room-count" aria-live="polite">Đang tải hạng phòng…</p></div><div class="hotel-search"><span id="room-search-icon" aria-hidden="true"></span><label class="sr-only" for="room-keyword">Tìm hạng phòng…</label><input id="room-keyword" type="search" placeholder="Tìm hạng phòng…" aria-label="Tìm theo tên hạng phòng"></div></div><div class="hotel-room-grid" id="rt-grid"></div><p class="muted" style="font-size:11px;margin-top:24px">Tình trạng phòng được xác nhận khi đặt. Hình ảnh phòng dùng để minh họa.</p></section>
     </div>
   </main>
 

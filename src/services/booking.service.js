@@ -144,12 +144,13 @@ class BookingService {
   }
 
   async confirmBooking(bookingId, currentUser) {
-    await bookingRepository.expireHolds();
     const booking = await this.getBookingDetail(bookingId, currentUser);
     if (booking.status !== 'pending_payment') {
       throw new AppError('INVALID_STATE', `Chỉ xác nhận được đơn đang chờ thanh toán. Trạng thái hiện tại: ${booking.status}.`, 422);
     }
-    return bookingRepository.confirmHold(booking.id);
+    const confirmed = await bookingRepository.confirmHold(booking.id);
+    if (!confirmed) throw new AppError('INVALID_STATE', 'Giữ chỗ đã hết hạn hoặc trạng thái đã thay đổi.', 422);
+    return confirmed;
   }
 
   async checkInBooking(id, currentUser) {

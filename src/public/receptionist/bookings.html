@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Quản lý đặt phòng — DT07 Hotel</title>
   <link rel="stylesheet" href="/shared/layout.css">
   <script src="/shared/auth-guard.js"></script>
   <script src="/shared/api.js"></script>
   <script src="/shared/ui-wrapper.js"></script>
+<link rel="stylesheet" href="/shared/accessibility.css">
+<script src="/shared/accessibility.js" defer></script>
+<meta name="description" content="Tiếp nhận và quản lý trạng thái đặt phòng, nhận phòng và trả phòng.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
 <body>
+<h1 class="sr-only">Quản lý đặt phòng</h1>
   <div class="stats-row">
     <div class="stat-card stat-card-action" id="stat-total" role="button" tabindex="0" title="Xem tất cả đơn">
       <div class="stat-icon" style="background:#e0f2fe;color:#0284c7"><i class="fa-solid fa-calendar-check"></i></div>
       <div class="stat-info">
         <p>Tổng đơn đặt</p>
-        <h3 id="st-total">0</h3>
+        <p class="stat-value" id="st-total">0</p>
         <div class="stat-trend up" id="st-total-trend"></div>
       </div>
     </div>
@@ -23,7 +29,7 @@
       <div class="stat-icon" style="background:#fef3c7;color:#d97706"><i class="fa-solid fa-key"></i></div>
       <div class="stat-info">
         <p>Đã check-in</p>
-        <h3 id="st-checkedin">0</h3>
+        <p class="stat-value" id="st-checkedin">0</p>
         <div class="stat-trend up" id="st-in-trend"></div>
       </div>
     </div>
@@ -31,14 +37,14 @@
       <div class="stat-icon" style="background:#dcfce7;color:#166534"><i class="fa-solid fa-money-bill-wave"></i></div>
       <div class="stat-info">
         <p>Doanh thu dự kiến</p>
-        <h3 id="st-revenue">0đ</h3>
+        <p class="stat-value" id="st-revenue">0đ</p>
       </div>
     </div>
     <div class="stat-card stat-card-action" id="stat-cancelled" role="button" tabindex="0" title="Lọc đơn đã hủy">
       <div class="stat-icon" style="background:#fee2e2;color:#991b1b"><i class="fa-solid fa-ban"></i></div>
       <div class="stat-info">
         <p>Đơn đã hủy</p>
-        <h3 id="st-cancelled">0</h3>
+        <p class="stat-value" id="st-cancelled">0</p>
         <div class="stat-trend down" id="st-cancel-trend"></div>
       </div>
     </div>
@@ -49,7 +55,7 @@
       <div class="section-header">
         <div class="section-title">Tất cả đơn</div>
         <div class="filter-menu">
-          <select id="status-filter" title="Lọc theo trạng thái">
+          <label class="sr-only" for="status-filter">Lọc theo trạng thái</label><select id="status-filter" title="Lọc theo trạng thái">
             <option value="">Bộ lọc</option>
             <option value="pending_payment">Chờ thanh toán</option>
             <option value="confirmed">Đã xác nhận</option>

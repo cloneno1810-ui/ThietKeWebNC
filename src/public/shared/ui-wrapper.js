@@ -11,6 +11,8 @@ function showToast(title, detail, ok) {
   if (existing) existing.remove();
   const toast = document.createElement('div');
   toast.id = '_dev_toast';
+  toast.setAttribute('role', ok ? 'status' : 'alert');
+  toast.setAttribute('aria-atomic', 'true');
   toast.innerHTML = '<span style="font-size:1.2rem">' + (ok ? '✓' : 'i') + '</span>' +
     '<div><strong style="display:block;margin-bottom:2px">' + Security.escapeHtml(title) + '</strong>' +
     (detail ? '<small style="color:#94a3b8">' + Security.escapeHtml(detail) + '</small>' : '') + '</div>';
@@ -42,16 +44,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const active = currentPath === m.path || currentPath.endsWith(m.path);
     return '<a href="' + m.path + '" class="menu-item' + (active ? ' active' : '') + '"><i class="fa-solid ' + m.icon + '" style="width:18px;text-align:center"></i><span>' + m.name + '</span></a>';
   }).join('');
-  const sidebar = document.createElement('div');
+  const sidebar = document.createElement('nav');
+  sidebar.setAttribute('aria-label', 'Điều hướng nhân viên');
   sidebar.className = 'sidebar';
   sidebar.innerHTML = '<div class="sidebar-logo"><div class="icon"><i class="fa-solid fa-hotel"></i></div><div class="brand-text"><strong>DT07 Hotel</strong><small>Phenikaa Stay</small></div></div><div class="menu-label">Menu</div><div class="sidebar-menu">' + menuHtml + '</div><a href="#" id="btn-logout" class="menu-item logout"><i class="fa-solid fa-right-from-bracket" style="width:18px;text-align:center"></i><span>Đăng xuất</span></a>';
-  const header = document.createElement('div');
+  const header = document.createElement('header');
   header.className = 'header';
-  header.innerHTML = '<div class="page-title">' + (document.title || 'Dashboard') + '</div><div class="header-right"><div class="search-bar"><i class="fa-solid fa-magnifying-glass" style="color:#94a3b8"></i><input type="search" placeholder="Tìm mã đơn..." id="header-search"></div><div style="position:relative"><button type="button" class="icon-btn" id="btn-mail" title="Hộp thư"><i class="fa-regular fa-envelope"></i></button><div class="dropdown-panel" id="mail-panel"><div class="dropdown-item"><strong>Hộp thư</strong></div><div class="dropdown-item">' + (email || 'Chưa có email tài khoản') + '</div><div class="dropdown-item">Liên hệ GV: tanh.nguyenvan@phenikaa-uni.edu.vn</div></div></div><div style="position:relative"><button type="button" class="icon-btn" id="btn-bell" title="Thông báo"><i class="fa-regular fa-bell"></i><span class="dot" id="bell-dot" style="display:none"></span></button><div class="dropdown-panel" id="bell-panel"><div class="dropdown-item"><strong>Thông báo</strong></div><div class="dropdown-item" id="bell-list">Đang tải...</div></div></div><div style="position:relative"><div class="avatar" id="btn-avatar" title="' + fullName + '"><img alt="" src="https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName) + '&background=3b82f6&color=fff"></div><div class="dropdown-panel" id="avatar-panel"><div class="dropdown-item"><strong>' + fullName + '</strong><br><small>' + email + ' · ' + role + '</small></div><div class="dropdown-item action" id="avatar-logout">Đăng xuất</div></div></div></div>';
+  header.innerHTML = '<div class="page-title">' + (document.title || 'Dashboard') + '</div><div class="header-right"><div class="search-bar"><i class="fa-solid fa-magnifying-glass" style="color:#94a3b8"></i><label class="sr-only" for="header-search">Tìm mã đơn</label><input type="search" placeholder="Tìm mã đơn..." id="header-search"></div><div style="position:relative"><button type="button" class="icon-btn" id="btn-mail" title="Hộp thư"><i class="fa-regular fa-envelope"></i></button><div class="dropdown-panel" id="mail-panel"><div class="dropdown-item"><strong>Hộp thư</strong></div><div class="dropdown-item">' + (email || 'Chưa có email tài khoản') + '</div><div class="dropdown-item">Liên hệ GV: tanh.nguyenvan@phenikaa-uni.edu.vn</div></div></div><div style="position:relative"><button type="button" class="icon-btn" id="btn-bell" title="Thông báo"><i class="fa-regular fa-bell"></i><span class="dot" id="bell-dot" style="display:none"></span></button><div class="dropdown-panel" id="bell-panel"><div class="dropdown-item"><strong>Thông báo</strong></div><div class="dropdown-item" id="bell-list">Đang tải...</div></div></div><div style="position:relative"><button type="button" aria-label="Mở tài khoản" class="avatar" id="btn-avatar" title="' + fullName + '"><img alt="" src="https://ui-avatars.com/api/?name=' + encodeURIComponent(fullName) + '&background=3b82f6&color=fff"></button><div class="dropdown-panel" id="avatar-panel"><div class="dropdown-item"><strong>' + fullName + '</strong><br><small>' + email + ' · ' + role + '</small></div><button type="button" class="dropdown-item action" id="avatar-logout">Đăng xuất</button></div></div></div>';
   const originalContent = Array.from(document.body.childNodes);
   const mainWrapper = document.createElement('div');
   mainWrapper.className = 'main-wrapper';
-  const mainContent = document.createElement('div');
+  const mainContent = document.createElement('main');
   mainContent.className = 'main-content';
   originalContent.forEach((node) => mainContent.appendChild(node));
   mainWrapper.appendChild(header);

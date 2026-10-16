@@ -23,10 +23,10 @@ window.Hotel = {
   },
   roomImage(type) {
     const name = String(type.name || '').toLowerCase();
-    if (name.includes('suite') || name.includes('executive')) return '/assets/hotel/room-superior.jpg';
-    if (name.includes('deluxe')) return '/assets/hotel/room-deluxe.jpg';
-    if (name.includes('superior') || name.includes('double')) return '/assets/hotel/room-superior.jpg';
-    return '/assets/hotel/room-standard.jpg';
+    if (name.includes('suite') || name.includes('executive')) return '/assets/hotel/room-superior.webp';
+    if (name.includes('deluxe')) return '/assets/hotel/room-deluxe.webp';
+    if (name.includes('superior') || name.includes('double')) return '/assets/hotel/room-superior.webp';
+    return '/assets/hotel/room-standard.webp';
   },
   money(value) { return new Intl.NumberFormat('vi-VN').format(Number(value)) + ' đ'; },
   savePreferences(value) { sessionStorage.setItem('hotel-booking-preferences', JSON.stringify(value)); },
@@ -40,7 +40,7 @@ window.Hotel = {
     const account = user
       ? '<div class="hotel-account"><button class="hotel-account-toggle" id="hotel-account-toggle" aria-expanded="false" aria-controls="hotel-account-panel"><span class="hotel-account-initial">' + this.escape(Array.from(user.fullName || 'K')[0]) + '</span><span class="hotel-account-name">Tài khoản</span></button><div class="hotel-account-panel" id="hotel-account-panel"><strong>' + this.escape(user.fullName) + '</strong><small>' + this.escape(user.email) + '</small><a href="/guest/my-bookings.html">Đơn đặt phòng của tôi</a><button id="hotel-logout" type="button">Đăng xuất</button></div></div>'
       : '<a href="/login.html">Đăng nhập</a>';
-    header.innerHTML = '<div class="hotel-container hotel-header-inner"><a class="hotel-brand" href="/" aria-label="DT07 Hotel — Trang chủ"><span class="hotel-mark">DT<small>07</small></span><span><span class="hotel-brand-name">DT07 Hotel</span><span class="hotel-brand-note">PHENIKAA STAY</span></span></a><nav class="hotel-nav" id="hotel-menu" aria-label="Điều hướng chính"><a href="/#about">Khách sạn</a><a href="' + (home ? '#rooms' : '/guest/rooms.html') + '"' + current('/guest/rooms.html') + '>Hạng phòng</a><a href="/#amenities">Tiện nghi</a><a href="/#gallery">Hình ảnh</a>' + (user ? '<a href="/guest/my-bookings.html"' + current('/guest/my-bookings.html') + '>Đơn của tôi</a>' : '') + '</nav><div class="hotel-header-actions"><span class="hotel-language">VI</span>' + account + '<a class="hotel-button yellow" href="' + (home ? '#booking' : '/guest/rooms.html') + '">' + this.icon('calendar') + 'Đặt phòng</a></div><button id="hotel-menu-toggle" class="hotel-menu-toggle" aria-label="Mở menu" aria-expanded="false" aria-controls="hotel-menu">' + this.icon('menu') + '</button></div>';
+    header.innerHTML = '<div class="hotel-container hotel-header-inner"><a class="hotel-brand" href="/"><span class="hotel-mark">DT<small>07</small></span><span><span class="hotel-brand-name">DT07 Hotel</span><span class="hotel-brand-note">PHENIKAA STAY</span></span></a><nav class="hotel-nav" id="hotel-menu" aria-label="Điều hướng chính"><a href="/#about">Khách sạn</a><a href="' + (home ? '#rooms' : '/guest/rooms.html') + '"' + current('/guest/rooms.html') + '>Hạng phòng</a><a href="/#amenities">Tiện nghi</a><a href="/#gallery">Hình ảnh</a>' + (user ? '<a href="/guest/my-bookings.html"' + current('/guest/my-bookings.html') + '>Đơn của tôi</a>' : '') + '</nav><div class="hotel-header-actions"><span class="hotel-language">VI</span>' + account + '<a class="hotel-button yellow" href="' + (home ? '#booking' : '/guest/rooms.html') + '">' + this.icon('calendar') + 'Đặt phòng</a></div><button id="hotel-menu-toggle" class="hotel-menu-toggle" aria-label="Mở menu" aria-expanded="false" aria-controls="hotel-menu">' + this.icon('menu') + '</button></div>';
     document.getElementById('hotel-menu-toggle').addEventListener('click', (event) => {
       const open = document.getElementById('hotel-menu').classList.toggle('open');
       event.currentTarget.setAttribute('aria-expanded', String(open));
@@ -76,7 +76,7 @@ window.Hotel = {
   },
   bindGallery() {
     document.querySelectorAll('[data-hero-photo]').forEach(button => button.addEventListener('click', () => {
-      const photo = document.getElementById('hero-photo'); photo.src = button.dataset.heroPhoto; photo.alt = button.dataset.photoLabel;
+      const photo = document.getElementById('hero-photo'); photo.src = button.dataset.heroPhoto; photo.srcset = button.dataset.heroPhoto.replace(".webp", "-640.webp") + " 640w, " + button.dataset.heroPhoto + " 1600w"; photo.alt = button.dataset.photoLabel;
       document.querySelectorAll('[data-hero-photo]').forEach(other => other.setAttribute('aria-pressed', String(other === button)));
     }));
     const gallery = document.querySelectorAll('[data-gallery-photo]');

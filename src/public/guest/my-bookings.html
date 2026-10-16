@@ -10,6 +10,11 @@
   <script src="/shared/api.js"></script>
   <script src="/shared/hotel.js"></script>
   <script src="/shared/ui-wrapper.js"></script>
+<link rel="stylesheet" href="/shared/accessibility.css">
+<script src="/shared/accessibility.js" defer></script>
+<meta name="description" content="Xem lịch lưu trú, trạng thái và hủy đơn đặt phòng của bạn tại DT07 Hotel.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
 </head>
 <body class="hotel-page" data-hotel-page="bookings">
   <main>
@@ -20,7 +25,7 @@
     <div>
       <h2 class="page-h2">Đơn đặt phòng của tôi</h2>
     </div>
-    <div class="hotel-booking-tools"><label class="hotel-search"><span id="booking-search-icon" aria-hidden="true"></span><input id="booking-search" type="search" aria-label="Tìm đơn đặt phòng" placeholder="Tìm mã đơn hoặc hạng phòng…"></label><select class="hotel-filter" id="booking-filter" aria-label="Lọc đơn theo trạng thái"><option value="">Tất cả trạng thái</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="checked_in">Đang ở</option><option value="checked_out">Đã trả phòng</option><option value="cancelled">Đã hủy</option><option value="no_show">Không đến nhận phòng</option></select></div>
+    <div class="hotel-booking-tools"><div class="hotel-search"><span id="booking-search-icon" aria-hidden="true"></span><label class="sr-only" for="booking-search">Tìm đơn đặt phòng</label><input id="booking-search" type="search" aria-label="Tìm đơn đặt phòng" placeholder="Tìm mã đơn hoặc hạng phòng…"></div><label class="sr-only" for="booking-filter">Lọc đơn theo trạng thái</label><select class="hotel-filter" id="booking-filter" aria-label="Lọc đơn theo trạng thái"><option value="">Tất cả trạng thái</option><option value="pending_payment">Chờ thanh toán</option><option value="confirmed">Đã xác nhận</option><option value="checked_in">Đang ở</option><option value="checked_out">Đã trả phòng</option><option value="cancelled">Đã hủy</option><option value="no_show">Không đến nhận phòng</option></select></div>
   </div>
   <div class="hotel-table-wrap"><table class="data-table">
     <thead>
