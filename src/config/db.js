@@ -17,6 +17,7 @@ module.exports = {
   query: async (text, params) => {
     // sql.query() tra ve mang rows truc tiep (da xac nhan qua kiem thu)
     const rows = await sql.query(text, params || []);
+    require('../utils/cache').invalidateForQuery(text, rows.length);
     return { rows, rowCount: rows.length };
   },
 

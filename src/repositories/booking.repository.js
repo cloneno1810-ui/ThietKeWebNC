@@ -142,7 +142,7 @@ class BookingRepository {
     const result = await db.query(
       `UPDATE bookings
        SET status = 'confirmed', hold_expires_at = NULL, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1
+       WHERE id = $1 AND status = 'pending_payment' AND hold_expires_at > CURRENT_TIMESTAMP
        RETURNING *;`,
       [id]
     );

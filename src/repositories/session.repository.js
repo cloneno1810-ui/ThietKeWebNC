@@ -1,5 +1,12 @@
 const db = require('../config/db');
 module.exports = {
+  async findActiveUser(id, userId) {
+    const result = await db.query(`SELECT u.id, u.email, u.full_name, u.role
+      FROM auth_sessions s JOIN users u ON u.id = s.user_id
+      WHERE s.id = $1 AND s.user_id = $2 AND s.revoked_at IS NULL
+        AND s.expires_at > CURRENT_TIMESTAMP`, [id, userId]);
+    return result.rows[0] || null;
+  },
   async create(id, userId, expiresAt) {
     await db.query('INSERT INTO auth_sessions (id, user_id, expires_at) VALUES ($1, $2, $3)', [id, userId, expiresAt]);
   },

@@ -32,14 +32,13 @@ class ReportRepository {
   async occupancyByRoomType({ from, to }) {
     const result = await db.query(
       `SELECT rt.id, rt.name, COUNT(r.id)::int AS total_rooms,
-              COUNT(DISTINCT b.room_id) FILTER (
-                WHERE b.status IN ('confirmed', 'checked_in')
-                  AND b.check_in_date <= $2::date
-                  AND b.check_out_date > $1::date
+              COUNT(r.id) FILTER (
+                WHERE EXISTS (SELECT 1 FROM bookings b
+                  WHERE b.room_id = r.id AND b.status IN ('confirmed', 'checked_in')
+                  AND b.check_in_date <= $2::date AND b.check_out_date > $1::date)
               )::int AS occupied_rooms
        FROM room_types rt
        LEFT JOIN rooms r ON r.room_type_id = rt.id
-       LEFT JOIN bookings b ON b.room_id = r.id
        GROUP BY rt.id, rt.name
        ORDER BY rt.id ASC;`,
       [from, to]
